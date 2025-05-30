@@ -22,5 +22,7 @@ curl localhost:8080
 ## quality gate 
 	http://localhost:9000/api/qualitygates/project_status?projectKey=casino-trader
 
-
+#CLI commands to retrieve project details 
+curl --location --request GET 'http://localhost:8088/getSonarProject' \
+--header 'Authorization: Bearer <user_token>'
 
