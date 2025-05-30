@@ -20,8 +20,8 @@ public class SonarController {
 		return "Welcome to sonar dashboard custom export Application!";
 	}
 
-	@RequestMapping("/getSonarProject")
-	public List<String> getSonarProjects(@RequestParam String projectkey) {
+	@RequestMapping("/getProjects")
+	public List<String> getSonarProjects() {
 
 		List<String> project = sonarService.findAll();
 		return project;
