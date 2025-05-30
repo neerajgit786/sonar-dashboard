@@ -16,11 +16,11 @@ curl localhost:8080
 ##few sonar api sample request
 
 ## coverage:
-	http://localhost:9000/api/measures/component?metricKeys=coverage&component=casino-trader
+	http://localhost:9000/api/measures/component?metricKeys=coverage&component=<project-key>
 ## bugs:
-	http://localhost:9000/api/measures/component?metricKeys=bugs&component=casino-trader
+	http://localhost:9000/api/measures/component?metricKeys=bugs&component=<project-key>
 ## quality gate 
-	http://localhost:9000/api/qualitygates/project_status?projectKey=casino-trader
+	http://localhost:9000/api/qualitygates/project_status?projectKey=<project-key>
 
 #CLI commands to retrieve project details 
 curl --location --request GET 'http://localhost:8088/getSonarProject' \
