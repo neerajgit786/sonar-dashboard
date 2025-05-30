@@ -23,6 +23,5 @@ curl localhost:8080
 	http://localhost:9000/api/qualitygates/project_status?projectKey=<project-key>
 
 #CLI commands to retrieve project details 
-curl --location --request GET 'http://localhost:8088/getSonarProject' \
---header 'Authorization: Bearer <user_token>'
+curl --location --request GET 'http://localhost:8088/geProjects' --header 'Authorization: Bearer <user_token>'
 
