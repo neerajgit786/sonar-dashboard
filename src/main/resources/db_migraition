@@ -1,0 +1,68 @@
+-- DROP SCHEMA public;
+
+CREATE SCHEMA public AUTHORIZATION pg_database_owner;
+
+-- sonar.master definition
+
+-- Drop table
+
+-- DROP TABLE sonar.master;
+
+CREATE TABLE sonar.master (
+	id int8 NOT NULL,
+	"date" date NULL,
+	gate_name varchar(255) NULL,
+	gate_status varchar(255) NULL,
+	"name" varchar(255) NULL,
+	"key" varchar(255) NULL,
+	report_url varchar(255) NULL,
+	CONSTRAINT master_pkey PRIMARY KEY (id)
+);
+
+-- sonar.master_seq definition
+
+-- DROP SEQUENCE sonar.master_seq;
+
+CREATE SEQUENCE sonar.master_seq
+	INCREMENT BY 50
+	MINVALUE 1
+	MAXVALUE 9223372036854775807
+	START 1
+	CACHE 1
+	NO CYCLE;
+
+-- sonar.metrics definition
+
+-- Drop table
+
+-- DROP TABLE sonar.metrics;
+
+CREATE TABLE sonar.metrics (
+	id int8 NOT NULL,
+	bugs int4 NULL,
+	code_smells int4 NULL,
+	coverage float8 NULL,
+	"type" varchar(255) NULL,
+	updated_date date NULL,
+	master_id int8 NULL,
+	security_hotspots int4 NULL,
+	vulnerabilities int4 NULL,
+	CONSTRAINT metrics_pkey PRIMARY KEY (id)
+);
+
+
+-- sonar.metrics foreign keys
+
+ALTER TABLE sonar.metrics ADD CONSTRAINT fk8eewy5yepifp3dnxvkbw1bvdl FOREIGN KEY (master_id) REFERENCES sonar.master(id);
+
+-- sonar.metrics_seq definition
+
+-- DROP SEQUENCE sonar.metrics_seq;
+
+CREATE SEQUENCE sonar.metrics_seq
+	INCREMENT BY 50
+	MINVALUE 1
+	MAXVALUE 9223372036854775807
+	START 1
+	CACHE 1
+	NO CYCLE;
