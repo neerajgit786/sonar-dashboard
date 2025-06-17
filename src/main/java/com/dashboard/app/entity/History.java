@@ -2,18 +2,14 @@ package com.dashboard.app.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "metrics")
+@Table(name = "analysis_history")
 @Data
-@Getter
-@Setter
-public class Metrics {
+public class History {
     @Id
     @GeneratedValue
     private Long id;
@@ -23,6 +19,8 @@ public class Metrics {
     private Master master;
 
     private String type;
+    @Column(name = "gate_status")
+    private String gateStatus;
     private Integer bugs;
     private Integer codeSmells;
     private Double coverage;

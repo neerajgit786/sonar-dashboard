@@ -1,9 +1,11 @@
 package com.dashboard.app.service.impl;
 
 import com.dashboard.app.config.SonarQubeConfig;
+import com.dashboard.app.entity.History;
 import com.dashboard.app.entity.Master;
 import com.dashboard.app.entity.Metrics;
 import com.dashboard.app.model.Project;
+import com.dashboard.app.repo.HistoryRepository;
 import com.dashboard.app.repo.MasterRepository;
 import com.dashboard.app.repo.MetricsRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,10 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +34,8 @@ public class SonarService {
     private MetricsRepository metricsRepo;
     @Autowired
     private SonarQubeConfig sonarQubeConfig;
+    @Autowired
+    private HistoryRepository historyRepository;
 
     public List<String> fetchAndSaveProjects() {
         List<String> projectKeyList= new ArrayList<>();
@@ -56,7 +58,7 @@ public class SonarService {
                     Master master = new Master();
                     master.setKey(key);
                     master.setName(name);
-                    master.setDate(LocalDate.now());
+                    master.setDate(LocalDateTime.now());
                     master.setGateStatus("NOT_CHECKED"); // Default value; will be updated by fetchAndSaveMetrics()
                     master.setReport_url("http://localhost:9000/dashboard?id=" + key);
 
@@ -89,13 +91,9 @@ public class SonarService {
             String gateStatus = gate
                     .get("status").equals("OK") ? "PASSED" : "FAILED";
 
-//            Master master = new Master();
-//            master.setName(gameName);
-            master.setDate(LocalDate.now());
-//            master.setKey(projectKey);
+            master.setDate(LocalDateTime.now());
             master.setGateStatus(gateStatus);
             master.setReport_url("http://localhost:9000/dashboard?id=" + master.getName());
-//            master = masterRepo.save(master);
 
             String metricsUrl = sonarQubeConfig.getSonarServerUrl() + "/api/measures/component?component=" + master.getKey() +
                     "&metricKeys=coverage,bugs,code_smells,vulnerabilities,security_hotspots&additionalFields=periods";
@@ -106,7 +104,7 @@ public class SonarService {
             Metrics metrics = new Metrics();
             metrics.setMaster(master);
             metrics.setType("overall");
-            metrics.setUpdatedDate(LocalDate.now());
+            metrics.setUpdatedDate(LocalDateTime.now());
 
             for (JsonNode measure : measures) {
                 String metric = measure.get("metric").asText();
@@ -148,6 +146,60 @@ public class SonarService {
                 );
             }
         }
+    }
+
+    public JsonNode fetchHistoricalMetrics(String projectKey) {
+        String fromDate ="2024-01-01";
+        String metrics= "coverage,bugs,code_smells,vulnerabilities,security_hotspots";
+
+        String url = sonarQubeConfig.getSonarServerUrl() + "/api/measures/search_history" +
+                "?component=" + projectKey +
+                "&metrics=" + metrics +
+                "&from=" + fromDate;
+
+        HttpEntity<Void> entity = new HttpEntity<>(createHeaders());
+        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+
+        Map<LocalDateTime, History> historyMap = new HashMap<>();
+
+            JsonNode measures = response.getBody().get("measures");
+
+            for (JsonNode metricNode : measures) {
+                String metric = metricNode.get("metric").asText();
+                for (JsonNode historyEntry : metricNode.get("history")) {
+                    String trimmed = historyEntry.get("date").asText().substring(0, 19);  // "2025-05-15T10:51:32"
+                    LocalDateTime ldt = LocalDateTime.parse(trimmed);
+                    String valueStr = historyEntry.get("value").asText();
+
+                    Master master = masterRepo.findByProjectKey(projectKey);
+                    History history = historyMap.computeIfAbsent(ldt, d -> {
+                        History h = new History();
+                        h.setMaster(master);
+                        h.setUpdatedDate(d);
+                        h.setType("Overall");
+                        h.setGateStatus(master.getGateStatus());
+                        return h;
+                    });
+
+                    switch (metric) {
+                        case "bugs" -> history.setBugs(Integer.parseInt(valueStr));
+                        case "code_smells" -> history.setCodeSmells(Integer.parseInt(valueStr));
+                        case "coverage" -> history.setCoverage(Double.parseDouble(valueStr));
+                        case "vulnerabilities" -> history.setVulnerabilities(Integer.parseInt(valueStr));
+                        case "security_hotspots" -> history.setSecurityHotspots(Integer.parseInt(valueStr));
+                    }
+                }
+            }
+
+            historyRepository.saveAll(historyMap.values());
+            return measures;
+        }
+
+    private HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(sonarQubeConfig.getUserToken(), "");
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        return headers;
     }
 
 }
