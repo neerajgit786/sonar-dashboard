@@ -15,6 +15,9 @@ curl localhost:8080
 ```
 ##few sonar api sample request
 
+## get all projects
+	curl --header 'Authorization: Bearer <user_token>' http://localhost:9000/api/projects/search
+
 ## coverage:
 	http://localhost:9000/api/measures/component?metricKeys=coverage&component=<project-key>
 ## bugs:
@@ -54,3 +57,8 @@ Vulnerabilities: vulnerabilities
 
 # example 
 curl -x --header "Authorization: Bearer <user_token>" http://sonarqube:9000/api/measures/search_history?metrics=code_smells&component=gates-of-olympus
+
+curl -x --header "Authorization: Bearer <user_token>" http://sonarqube:9000/api/issues/search?componentKeys=my_project_key&severities=CRITICAL,BLOCKER&types=BUG&resolved=false&ps=100
+
+# get all typescript rules.
+http://sonarqube:9000/api/rules/search?activation=true&languages=ts&ps=400
