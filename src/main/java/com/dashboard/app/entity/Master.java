@@ -23,7 +23,8 @@ public class Master {
     private String key;
     private String report_url;
     private LocalDateTime date;
-
     @Column(name = "gate_status")
     private String gateStatus;
+    @Column(name = "grade")
+    private String grade;
 }

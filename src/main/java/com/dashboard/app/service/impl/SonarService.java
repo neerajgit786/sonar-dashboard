@@ -1,5 +1,6 @@
 package com.dashboard.app.service.impl;
 
+import ch.qos.logback.core.encoder.EchoEncoder;
 import com.dashboard.app.config.SonarQubeConfig;
 import com.dashboard.app.entity.History;
 import com.dashboard.app.entity.Master;
@@ -22,6 +23,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.dashboard.app.util.GradeCalculator.calculateGrade;
 
 @Service
 public class SonarService {
@@ -96,7 +99,7 @@ public class SonarService {
             master.setReport_url("http://localhost:9000/dashboard?id=" + master.getName());
 
             String metricsUrl = sonarQubeConfig.getSonarServerUrl() + "/api/measures/component?component=" + master.getKey() +
-                    "&metricKeys=coverage,bugs,code_smells,vulnerabilities,security_hotspots&additionalFields=periods";
+                    "&metricKeys=coverage,bugs,code_smells,vulnerabilities,security_hotspots,sqale_debt_ratio&additionalFields=period";
 
             ResponseEntity<JsonNode> metricsResponse = restTemplate.exchange(metricsUrl, HttpMethod.GET, entity, JsonNode.class);
             JsonNode measures = metricsResponse.getBody().get("component").get("measures");
@@ -116,84 +119,111 @@ public class SonarService {
                     case "coverage" -> metrics.setCoverage(Double.parseDouble(value));
                     case "vulnerabilities" -> metrics.setVulnerabilities(Integer.parseInt(value));
                     case "security_hotspots" -> metrics.setSecurityHotspots(Integer.parseInt(value));
+                    case "sqale_debt_ratio" -> metrics.setMaintainability(Double.parseDouble(value));
                 }
             }
             metricsList.add(metrics);
+            //calculate grade for each project based on metrics
+            String grade = calculateGrade(metrics.getVulnerabilities(), metrics.getMaintainability(), metrics.getBugs());
+            master.setGrade(grade);
         }
+
         masterRepo.saveAll(masterList);
         metricsRepo.saveAll(metricsList);
     }
 
 
-    public void exportToCSV(String outputPath) throws IOException {
+    public ResponseEntity<String> exportToCSV(String outputPath) throws IOException {
         List<Metrics> data = metricsRepo.findAll();
 
         try (PrintWriter writer = new PrintWriter(new File(outputPath))) {
-            writer.println("Game Name,Sonar Report URL,Date,Quality Gate,Code Coverage %,Bugs,Code Smell,Security,Vulnerabilities");
+            writer.println("Game Name,Sonar Report URL,Date,Quality Gate,Grade,Code Coverage %,Bugs,Code Smell,Security,Vulnerabilities,Tech Debt Ratio");
 
             for (Metrics m : data) {
                 Master master = m.getMaster();
-                writer.printf("%s,%s,%s,%s,%s,%d,%d,%d,%d%n",
+                writer.printf("%s,%s,%s,%s,%s,%s,%d,%d,%d,%d,%s%n",
                         master.getName(),
-                       master.getReport_url(),
+                        master.getReport_url(),
                         master.getDate(),
                         master.getGateStatus(),
+                        master.getGrade(),
                         m.getCoverage(),
                         m.getBugs(),
                         m.getCodeSmells(),
                         m.getSecurityHotspots(),
-                        m.getVulnerabilities()
+                        m.getVulnerabilities(),
+                        m.getMaintainability()
                 );
             }
         }
+        catch(Exception e)
+        {
+            return new ResponseEntity<>("Error in export :"+e.getMessage().toString(),HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>("successful export :",HttpStatus.OK);
+
     }
 
-    public JsonNode fetchHistoricalMetrics(String projectKey) {
-        String fromDate ="2024-01-01";
-        String metrics= "coverage,bugs,code_smells,vulnerabilities,security_hotspots";
+    public ResponseEntity<String> fetchHistoricalMetrics() {
+       try {
+           List<Master> masterList = masterRepo.findAll();
+           String metrics = "coverage,bugs,code_smells,vulnerabilities,security_hotspots,sqale_debt_ratio";
 
-        String url = sonarQubeConfig.getSonarServerUrl() + "/api/measures/search_history" +
-                "?component=" + projectKey +
-                "&metrics=" + metrics +
-                "&from=" + fromDate;
+           for (Master master : masterList) {
+               //History singleHistoryRecord = historyRepository.findTopByMasterId(master.getId().toString());
+               History singleHistoryRecord = historyRepository.findTopByMasterIdOrderByUpdatedDateDesc(master.getId());
+               String fromDate = singleHistoryRecord != null ? singleHistoryRecord.getUpdatedDate().toLocalDate().toString() : "2025-01-01";
+               String url = sonarQubeConfig.getSonarServerUrl() + "/api/measures/search_history" +
+                       "?component=" + master.getKey() +
+                       "&metrics=" + metrics +
+                       "&from=" + fromDate;
 
-        HttpEntity<Void> entity = new HttpEntity<>(createHeaders());
-        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+               HttpEntity<Void> entity = new HttpEntity<>(createHeaders());
+               ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
 
-        Map<LocalDateTime, History> historyMap = new HashMap<>();
+               Map<LocalDateTime, History> historyMap = new HashMap<>();
 
-            JsonNode measures = response.getBody().get("measures");
+               JsonNode measures = response.getBody().get("measures");
 
-            for (JsonNode metricNode : measures) {
-                String metric = metricNode.get("metric").asText();
-                for (JsonNode historyEntry : metricNode.get("history")) {
-                    String trimmed = historyEntry.get("date").asText().substring(0, 19);  // "2025-05-15T10:51:32"
-                    LocalDateTime ldt = LocalDateTime.parse(trimmed);
-                    String valueStr = historyEntry.get("value").asText();
+               for (JsonNode metricNode : measures) {
+                   String metric = metricNode.get("metric").asText();
+                   for (JsonNode historyEntry : metricNode.get("history")) {
+                       String trimmed = historyEntry.get("date").asText().substring(0, 19);  // "2025-05-15T10:51:32"
+                       LocalDateTime ldt = LocalDateTime.parse(trimmed);
+                       String valueStr = historyEntry.get("value").asText();
 
-                    Master master = masterRepo.findByProjectKey(projectKey);
-                    History history = historyMap.computeIfAbsent(ldt, d -> {
-                        History h = new History();
-                        h.setMaster(master);
-                        h.setUpdatedDate(d);
-                        h.setType("Overall");
-                        h.setGateStatus(master.getGateStatus());
-                        return h;
-                    });
+                       // Master master = masterRepo.findByProjectKey(master.getKey());
+                       History history = historyMap.computeIfAbsent(ldt, d -> {
+                           History h = new History();
+                           h.setMaster(master);
+                           h.setUpdatedDate(d);
+                           h.setType("Overall");
+                           h.setGateStatus(master.getGateStatus());
+                           return h;
+                       });
 
-                    switch (metric) {
-                        case "bugs" -> history.setBugs(Integer.parseInt(valueStr));
-                        case "code_smells" -> history.setCodeSmells(Integer.parseInt(valueStr));
-                        case "coverage" -> history.setCoverage(Double.parseDouble(valueStr));
-                        case "vulnerabilities" -> history.setVulnerabilities(Integer.parseInt(valueStr));
-                        case "security_hotspots" -> history.setSecurityHotspots(Integer.parseInt(valueStr));
-                    }
-                }
-            }
+                       switch (metric) {
+                           case "bugs" -> history.setBugs(Integer.parseInt(valueStr));
+                           case "code_smells" -> history.setCodeSmells(Integer.parseInt(valueStr));
+                           case "coverage" -> history.setCoverage(Double.parseDouble(valueStr));
+                           case "vulnerabilities" -> history.setVulnerabilities(Integer.parseInt(valueStr));
+                           case "security_hotspots" -> history.setSecurityHotspots(Integer.parseInt(valueStr));
+                           case "sqale_debt_ratio" -> history.setMaintainability(Double.parseDouble(valueStr));
+                       }
+                   }
+               }
+               historyRepository.saveAll(historyMap.values());
+           }
+       }
+       catch (Exception e)
+       {
+           return new ResponseEntity<>("fetch failed : "+e.getMessage().toString(),HttpStatus.BAD_REQUEST);
 
-            historyRepository.saveAll(historyMap.values());
-            return measures;
-        }
+       }
+        return new ResponseEntity<>("successful fetch :",HttpStatus.OK);
+
+
+    }
 
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();

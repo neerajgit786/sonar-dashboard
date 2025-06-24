@@ -14,7 +14,7 @@ public class History {
     @GeneratedValue
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "master_id")
     private Master master;
 
@@ -27,6 +27,8 @@ public class History {
     private Integer vulnerabilities;
     @Column(name = "security_hotspots")
     private Integer securityHotspots;
+    @Column(name = "sqale_debt_ratio")
+    private Double maintainability;
 
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;

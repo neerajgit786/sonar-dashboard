@@ -30,13 +30,13 @@ public class SonarController {
 		return "Welcome to sonar dashboard custom export Application!";
 	}
 
-	@RequestMapping("/getProjects")
+	@RequestMapping("/sonar/projects")
 	public List<String> getSonarProjects() {
 		List<String> project = sonarService.fetchAndSaveProjects();
 		return project;
 	}
 
-	@GetMapping("/sonar/save")
+	@GetMapping("/sonar/metrics")
 	public ResponseEntity<String> save() throws IOException {
 		sonarService.fetchAndSaveMetrics();
 		return ResponseEntity.ok("Data saved");
@@ -48,14 +48,10 @@ public class SonarController {
 		return ResponseEntity.ok("Exported to CSV.");
 	}
 
-//	@GetMapping("/api/metrics-db")
-//		public List<ProjectMetrics> getMetrics() {
-//			return sonarDbService.getAllMetricsFromDb();
-//		}
 
-	@GetMapping("/api/history")
-	public JsonNode getMetrics(@RequestParam String project_key) {
-		return sonarService.fetchHistoricalMetrics(project_key);
+	@GetMapping("/sonar/history")
+	public ResponseEntity<String> getMetrics() {
+		return sonarService.fetchHistoricalMetrics();
 	}
 
 }
