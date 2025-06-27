@@ -12,6 +12,6 @@ public interface SonarQubeService {
 
 	public void save(Project project);
 
-	public List<String> findAll();
+	public List<String> getListOfProjects();
 
 }
