@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "master")
@@ -21,8 +21,11 @@ public class Master {
     @Column(unique = true)
     private String key;
     private String report_url;
-    private LocalDate date;
-
+    private LocalDateTime date;
     @Column(name = "gate_status")
     private String gateStatus;
+    @Column(name = "grade")
+    private String grade;
+    @Column(name = "RAG_status")
+    private String ragStatus;
 }
