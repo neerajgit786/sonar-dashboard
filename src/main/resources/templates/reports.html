@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Game Reports</title>
+    <script>
+        async function loadReports() {
+            const response = await fetch('/dashboard/reports/data');
+            const data = await response.json();
+            const tableBody = document.getElementById('report-body');
+            data.forEach(report => {
+                let row = `<tr>
+                    <td>${report.gameName}</td>
+                    <td><a href="${report.sonarReportUrl}" target="_blank">Link</a></td>
+                    <td>${report.date}</td>
+                    <td>${report.qualityGate}</td>
+                    <td>${report.grade}</td>
+                    <td>${report.ragStatus}</td>
+                    <td>${report.codeCoverage}</td>
+                    <td>${report.bugs}</td>
+                    <td>${report.codeSmell}</td>
+                    <td>${report.security}</td>
+                    <td>${report.vulnerabilities}</td>
+                    <td>${report.techDebtRatio}</td>
+                     <td>${report.key}</td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+        window.onload = loadReports;
+    </script>
+</head>
+<body>
+<h1>Game Reports</h1>
+<table border="1">
+    <thead>
+    <tr>
+        <th>Game Name</th>
+        <th>Sonar Report URL</th>
+        <th>Date</th>
+        <th>Quality Gate</th>
+        <th>Grade</th>
+        <th>RAG Status</th>
+        <th>Code Coverage %</th>
+        <th>Bugs</th>
+        <th>Code Smell</th>
+        <th>Security</th>
+        <th>Vulnerabilities</th>
+        <th>Tech Debt Ratio</th>
+        <th>Game Key</th>
+    </tr>
+    </thead>
+    <tbody id="report-body"></tbody>
+</table>
+</body>
+</html>

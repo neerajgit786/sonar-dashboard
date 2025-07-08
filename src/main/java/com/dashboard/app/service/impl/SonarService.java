@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 
@@ -61,7 +63,7 @@ public class SonarService {
                     Master master = new Master();
                     master.setKey(key);
                     master.setName(name);
-                    master.setDate(LocalDateTime.now());
+                    master.setDate( LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
                     master.setGateStatus("NOT_CHECKED"); // Default value; will be updated by fetchAndSaveMetrics()
                     master.setReport_url("http://localhost:9000/dashboard?id=" + key);
 
@@ -93,7 +95,7 @@ public class SonarService {
             String gateStatus = gate
                     .get("status").asText().equals("OK") ? "PASSED" : "FAILED";
 
-            master.setDate(LocalDateTime.now());
+            master.setDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
             master.setGateStatus(gateStatus);
             master.setReport_url("http://localhost:9000/dashboard?id=" + master.getName());
 
@@ -106,25 +108,46 @@ public class SonarService {
             Metrics metrics = new Metrics();
             metrics.setMaster(master);
             metrics.setType("overall");
-            metrics.setUpdatedDate(LocalDateTime.now());
+            metrics.setUpdatedDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
 
             for (JsonNode measure : measures) {
                 String metric = measure.get("metric").asText();
-                String value = measure.get("value").asText();
+                String value = (measure.has("value") && !measure.get("value").isNull()) ?
+                        measure.get("value").asText() : "0";
 
-                switch (metric) {
-                    case "bugs" -> metrics.setBugs(Integer.parseInt(value));
-                    case "code_smells" -> metrics.setCodeSmells(Integer.parseInt(value));
-                    case "coverage" -> metrics.setCoverage(Double.parseDouble(value));
-                    case "vulnerabilities" -> metrics.setVulnerabilities(Integer.parseInt(value));
-                    case "security_hotspots" -> metrics.setSecurityHotspots(Integer.parseInt(value));
-                    case "sqale_debt_ratio" -> metrics.setMaintainability(Double.parseDouble(value));
+
+                try {
+                    switch (metric) {
+                        case "bugs" -> metrics.setBugs(Integer.parseInt(value));
+                        case "code_smells" -> metrics.setCodeSmells(Integer.parseInt(value));
+                        case "coverage" -> metrics.setCoverage(Double.parseDouble(value));
+                        case "vulnerabilities" -> metrics.setVulnerabilities(Integer.parseInt(value));
+                        case "security_hotspots" -> metrics.setSecurityHotspots(Integer.parseInt(value));
+                        case "sqale_debt_ratio" -> metrics.setMaintainability(Double.parseDouble(value));
+                    }
+                } catch (NumberFormatException e) {
+                    // Log the problem and use default values
+                    switch (metric) {
+                        case "bugs" -> metrics.setBugs(0);
+                        case "code_smells" -> metrics.setCodeSmells(0);
+                        case "coverage" -> metrics.setCoverage(0.0);
+                        case "vulnerabilities" -> metrics.setVulnerabilities(0);
+                        case "security_hotspots" -> metrics.setSecurityHotspots(0);
+                        case "sqale_debt_ratio" -> metrics.setMaintainability(0.0);
+                    }
                 }
             }
             metricsList.add(metrics);
             //calculate grade for each project based on metrics
             //String grade = calculateGrade(metrics.getVulnerabilities(), metrics.getMaintainability(), metrics.getBugs());
-            Result result = GradeCalculator.calculateGradeAndRag(metrics.getCoverage(), metrics.getBugs(), metrics.getSecurityHotspots(), metrics.getVulnerabilities(), metrics.getMaintainability());
+           // Result result = GradeCalculator.calculateGradeAndRag(metrics.getCoverage(), metrics.getBugs(), metrics.getSecurityHotspots(), metrics.getVulnerabilities(), metrics.getMaintainability());
+            Result result = GradeCalculator.calculateGradeAndRag(
+                    metrics.getCoverage() != null ? metrics.getCoverage() : 0.0,
+                    metrics.getBugs() != null ? metrics.getBugs() : 0,
+                    metrics.getSecurityHotspots() != null ? metrics.getSecurityHotspots() : 0,
+                    metrics.getVulnerabilities() != null ? metrics.getVulnerabilities() : 0,
+                    metrics.getMaintainability() != null ? metrics.getMaintainability() : 0.0
+            );
             master.setGrade(result.getGrade());
             master.setRagStatus(result.getRag());
         }
@@ -138,22 +161,24 @@ public class SonarService {
         List<Metrics> data = metricsRepo.findAll();
 
         try (PrintWriter writer = new PrintWriter(new File(outputPath))) {
-            writer.println("Game Name,Sonar Report URL,Date,Quality Gate,Grade,Code Coverage %,Bugs,Code Smell,Security,Vulnerabilities,Tech Debt Ratio");
-
+            writer.println("Game Name,Sonar Report URL,Date,Quality Gate,Grade,RAG Status,Code Coverage %,Bugs,Code Smell,Security,Vulnerabilities,Tech Debt Ratio,Game Key");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             for (Metrics m : data) {
                 Master master = m.getMaster();
-                writer.printf("%s,%s,%s,%s,%s,%s,%d,%d,%d,%d,%s%n",
+                writer.printf("%s,%s,%s,%s,%s,%s,%s,%d,%d,%d,%d,%s,%s%n",
                         master.getName(),
                         master.getReport_url(),
-                        master.getDate(),
+                        master.getDate().format(formatter),
                         master.getGateStatus(),
                         master.getGrade(),
+                        master.getRagStatus(),
                         m.getCoverage(),
                         m.getBugs(),
                         m.getCodeSmells(),
                         m.getSecurityHotspots(),
                         m.getVulnerabilities(),
-                        m.getMaintainability()
+                        m.getMaintainability(),
+                        master.getKey()
                 );
             }
         } catch (Exception e) {
