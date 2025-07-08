@@ -8,11 +8,14 @@
             const data = await response.json();
             const tableBody = document.getElementById('report-body');
             data.forEach(report => {
+                let qualityGateStyle = report.qualityGate === 'PASSED'
+                    ? 'background-color: green; color: white;'
+                    : 'background-color: red; color: white;';
                 let row = `<tr>
                     <td>${report.gameName}</td>
                     <td><a href="${report.sonarReportUrl}" target="_blank">Link</a></td>
                     <td>${report.date}</td>
-                    <td>${report.qualityGate}</td>
+                     <td style="${qualityGateStyle}">${report.qualityGate}</td>
                     <td>${report.grade}</td>
                     <td>${report.ragStatus}</td>
                     <td>${report.codeCoverage}</td>

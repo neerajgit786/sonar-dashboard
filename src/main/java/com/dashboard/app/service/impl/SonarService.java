@@ -65,7 +65,7 @@ public class SonarService {
                     master.setName(name);
                     master.setDate( LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
                     master.setGateStatus("NOT_CHECKED"); // Default value; will be updated by fetchAndSaveMetrics()
-                    master.setReport_url("http://localhost:9000/dashboard?id=" + key);
+                    master.setReport_url(sonarQubeConfig.getSonarServerUrl()+"/dashboard?id=" + key);
 
                     masterRepo.save(master);
                 }
