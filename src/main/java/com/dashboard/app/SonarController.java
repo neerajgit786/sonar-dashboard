@@ -24,7 +24,6 @@ public class SonarController {
 	@Autowired
 	private SonarDbService sonarDbService;
 
-
 	@RequestMapping("/")
 	String hello() {
 		return "Welcome to sonar dashboard custom export Application!";
@@ -53,6 +52,5 @@ public class SonarController {
 	public ResponseEntity<String> getMetrics() {
 		return sonarService.fetchHistoricalMetrics();
 	}
-
 
 }
