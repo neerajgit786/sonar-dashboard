@@ -9,6 +9,7 @@
             const response = await fetch('/dashboard/reports/data');
             const data = await response.json();
             const tableBody = document.getElementById('report-body');
+            var srno = 0;
             data.forEach(report => {
                 let qualityGateStyle = report.qualityGate === 'PASSED'
                     ? 'background-color: green; color: white;'
@@ -17,7 +18,9 @@
                     ? 'color: green;'
                     : (report.ragStatus === 'Amber'
                     ? 'color: #FFBF00;' : 'color: red;');
+                srno=srno+1;
                 let row = `<tr>
+                    <td>${srno}</td>
                     <td>${report.gameName}</td>
                     <td>${report.key}</td>
                     <td>${report.date}</td>
@@ -50,6 +53,7 @@
 
 <table class="styled-table">
     <tr>
+        <th>Seq No.</th>
         <th>Project Name</th>
         <th>Project Key</th>
         <th>Run Date</th>
