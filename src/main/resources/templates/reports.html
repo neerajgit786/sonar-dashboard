@@ -2,7 +2,8 @@
 <html>
 <head>
     <link th:href="@{/css/app.css}" rel="stylesheet" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>IG Sonar Dashboard</title>
     <script>
         async function loadReports() {
@@ -12,12 +13,12 @@
             var srno = 0;
             data.forEach(report => {
                 let qualityGateStyle = report.qualityGate === 'PASSED'
-                    ? 'background-color: green; color: white;'
-                    : 'background-color: red; color: white;';
+                    ? 'background-color: #4CAF50; color: white;'
+                    : 'background-color: #EF4B4B; color: white;';
                 let ragStatusStyle = report.ragStatus === 'Green'
-                    ? 'color: green;'
+                    ? 'color: #4CAF50;'
                     : (report.ragStatus === 'Amber'
-                    ? 'color: #FFBF00;' : 'color: red;');
+                    ? 'color: #FFBF00;' : 'color: #EF4B4B;');
                 srno=srno+1;
                 let row = `<tr>
                     <td>${srno}</td>
@@ -43,15 +44,21 @@
 <body>
 
 
- <div style="text-align:left; margin: 0 auto;">
+ <!-- <div style="text-align:left; margin: 0 auto;">
 <table class="styled-table-top">
 <tr><td><h2>IG Sonar Dashboard</h2></td>
 <td><button class="button" role="button" th:onclick="location.href='@{/targetPage}'"><i class="material-icons" style="font-size:20px;color:green;">refresh</i></button>
 <button class="button" role="button" th:onclick="location.href='@{/targetPage}'"><i class="material-icons" style="font-size:20px;color:red;">download</i></button></td></tr>
 </table>
+</div> -->
+<!-- Label -->
+<div class="header">
+    <img src="/images/ig-logo.png" alt="Company Logo" class="logo"/>
+    <div class="label">Sonar Dashboard</div>
+    <button class="btn refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+    <button class="btn download-btn"><i class="fas fa-download"></i> Download</button></div>
 
-
-<table class="styled-table">
+  <table class="styled-table">
     <tr>
         <th>Seq No.</th>
         <th>Project Name</th>

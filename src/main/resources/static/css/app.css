@@ -1,3 +1,16 @@
+.body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+.header {
+	margin: auto;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-left: 60px;
+    }
+
 .styled-table-top {
     border-collapse: collapse;
     margin: auto;
@@ -85,3 +98,30 @@
 .button:focus {
   background-color: #F082AC;
 }
+.logo {
+      width: 26px;
+      height: 26px;
+      font-family: Arial, sans-serif;
+    }
+.label {
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+.btn {
+      padding: 10px 16px;
+      margin: 10px 5px;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      color: white;
+    }
+
+.refresh-btn {
+      background-color: #4CAF50;
+    }
+
+.download-btn {
+      background-color: #2196F3;
+    }
