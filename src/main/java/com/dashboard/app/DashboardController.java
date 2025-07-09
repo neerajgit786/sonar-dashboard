@@ -1,13 +1,15 @@
 package com.dashboard.app;
 
-import com.dashboard.app.model.GameReport;
-import com.dashboard.app.service.impl.CsvService;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.List;
+import com.dashboard.app.model.GameReport;
+import com.dashboard.app.service.impl.CsvService;
 
 @Controller
 public class DashboardController {
@@ -24,5 +26,9 @@ public class DashboardController {
     public List<GameReport> getReportData() {
         return csvService.loadReports("sonar-metrics.csv");
 
+    }
+    @GetMapping("/styled-table")
+    public String getStyledPage(Model model) {
+        return "css/app.css";
     }
 }

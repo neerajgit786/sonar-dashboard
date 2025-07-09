@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 <head>
-    <title>Game Reports</title>
+    <link th:href="@{/css/app.css}" rel="stylesheet" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <title>IG Sonar Dashboard</title>
     <script>
         async function loadReports() {
             const response = await fetch('/dashboard/reports/data');
@@ -11,20 +13,23 @@
                 let qualityGateStyle = report.qualityGate === 'PASSED'
                     ? 'background-color: green; color: white;'
                     : 'background-color: red; color: white;';
+                let ragStatusStyle = report.ragStatus === 'Green'
+                    ? 'color: green;'
+                    : (report.ragStatus === 'Amber'
+                    ? 'color: #FFBF00;' : 'color: red;');
                 let row = `<tr>
                     <td>${report.gameName}</td>
-                    <td><a href="${report.sonarReportUrl}" target="_blank">Link</a></td>
+                    <td>${report.key}</td>
                     <td>${report.date}</td>
                      <td style="${qualityGateStyle}">${report.qualityGate}</td>
-                    <td>${report.grade}</td>
-                    <td>${report.ragStatus}</td>
                     <td>${report.codeCoverage}</td>
                     <td>${report.bugs}</td>
                     <td>${report.codeSmell}</td>
                     <td>${report.security}</td>
                     <td>${report.vulnerabilities}</td>
-                    <td>${report.techDebtRatio}</td>
-                     <td>${report.key}</td>
+                    <td>${report.grade}</td>
+                    <td style="${ragStatusStyle}">${report.ragStatus}</td>
+                    <td><a href="${report.sonarReportUrl}" target="_blank">Link</a></td>
                 </tr>`;
                 tableBody.innerHTML += row;
             });
@@ -33,25 +38,31 @@
     </script>
 </head>
 <body>
-<h1>Game Reports</h1>
-<table border="1">
-    <thead>
+
+
+ <div style="text-align:left; margin: 0 auto;">
+<table class="styled-table">
+<tr><td><h2>IG Sonar Dashboard</h2></td>
+<td><button class="button" role="button" th:onclick="location.href='@{/targetPage}'"><i class="material-icons" style="font-size:20px;color:green;">refresh</i></button>
+<button class="button" role="button" th:onclick="location.href='@{/targetPage}'"><i class="material-icons" style="font-size:20px;color:red;">download</i></button></td></tr>
+</table>
+
+
+<table class="styled-table">
     <tr>
-        <th>Game Name</th>
-        <th>Sonar Report URL</th>
-        <th>Date</th>
+        <th>Project Name</th>
+        <th>Project Key</th>
+        <th>Run Date</th>
         <th>Quality Gate</th>
-        <th>Grade</th>
-        <th>RAG Status</th>
-        <th>Code Coverage %</th>
+        <th>Coverage%</th>
         <th>Bugs</th>
         <th>Code Smell</th>
         <th>Security</th>
         <th>Vulnerabilities</th>
-        <th>Tech Debt Ratio</th>
-        <th>Game Key</th>
+		<th>Grade</th>
+        <th>RAG Status</th>
+		<th>Sonar URL</th>        
     </tr>
-    </thead>
     <tbody id="report-body"></tbody>
 </table>
 </body>
