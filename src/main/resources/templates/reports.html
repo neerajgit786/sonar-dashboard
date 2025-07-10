@@ -16,9 +16,9 @@
                     ? 'background-color: #4CAF50; color: white;'
                     : 'background-color: #EF4B4B; color: white;';
                 let ragStatusStyle = report.ragStatus === 'Green'
-                    ? 'color: #4CAF50;'
+                    ? 'font-weight: bold; color: #4CAF50;'
                     : (report.ragStatus === 'Amber'
-                    ? 'color: #FFBF00;' : 'color: #EF4B4B;');
+                    ? 'font-weight: bold;color: #FFBF00;' : 'font-weight: bold;color: #EF4B4B;');
                 srno=srno+1;
                 let row = `<tr>
                     <td>${srno}</td>
