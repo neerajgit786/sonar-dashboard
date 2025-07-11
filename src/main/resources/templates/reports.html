@@ -3,19 +3,27 @@
 <head>
     <title>Game Reports</title>
     <script>
+        let currentReports = [];
+
+        // Load reports from /dashboard/reports/data
         async function loadReports() {
             const response = await fetch('/dashboard/reports/data');
             const data = await response.json();
+            currentReports = data; // store for download
+
             const tableBody = document.getElementById('report-body');
+            tableBody.innerHTML = ''; // clear table
+
             data.forEach(report => {
                 let qualityGateStyle = report.qualityGate === 'PASSED'
                     ? 'background-color: green; color: white;'
                     : 'background-color: red; color: white;';
+
                 let row = `<tr>
                     <td>${report.gameName}</td>
                     <td><a href="${report.sonarReportUrl}" target="_blank">Link</a></td>
                     <td>${report.date}</td>
-                     <td style="${qualityGateStyle}">${report.qualityGate}</td>
+                    <td style="${qualityGateStyle}">${report.qualityGate}</td>
                     <td>${report.grade}</td>
                     <td>${report.ragStatus}</td>
                     <td>${report.codeCoverage}</td>
@@ -24,17 +32,76 @@
                     <td>${report.security}</td>
                     <td>${report.vulnerabilities}</td>
                     <td>${report.techDebtRatio}</td>
-                     <td>${report.key}</td>
+                    <td>${report.key}</td>
                 </tr>`;
                 tableBody.innerHTML += row;
             });
         }
+
+        // Download CSV by calling /sonar/export and prompting file download
+        async function downloadCSV() {
+            try {
+                const response = await fetch('/sonar/export');
+
+                if (!response.ok) {
+                    alert('Failed to download file.');
+                    return;
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+
+                // Try to get filename from headers
+                const disposition = response.headers.get('Content-Disposition');
+                let filename = 'game_reports.csv';
+                if (disposition && disposition.includes('filename=')) {
+                    const match = disposition.match(/filename="?([^"]+)"?/);
+                    if (match && match[1]) filename = match[1];
+                }
+                a.download = filename;
+
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                alert('Download successful!');
+            } catch (error) {
+                alert('Error while downloading file.');
+                console.error(error);
+            }
+        }
+
+        // Refresh data by calling /dashboard/refresh and then reload table
+        async function refreshReports() {
+            try {
+                const response = await fetch('/dashboard/refresh', { method: 'POST' });
+                if (response.ok) {
+                    alert('Data refreshed successfully!');
+                    await loadReports(); // reload table
+                } else {
+                    alert('Failed to refresh data.');
+                }
+            } catch (error) {
+                alert('Error while refreshing data.');
+                console.error(error);
+            }
+        }
+
         window.onload = loadReports;
     </script>
 </head>
 <body>
 <h1>Game Reports</h1>
-<table border="1">
+
+<!-- Buttons -->
+<button onclick="downloadCSV()">Download CSV</button>
+<button onclick="refreshReports()">Refresh</button>
+
+<!-- Report Table -->
+<table border="1" style="margin-top:10px;">
     <thead>
     <tr>
         <th>Game Name</th>

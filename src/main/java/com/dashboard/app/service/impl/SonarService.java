@@ -1,11 +1,9 @@
 package com.dashboard.app.service.impl;
 
-import ch.qos.logback.core.encoder.EchoEncoder;
 import com.dashboard.app.config.SonarQubeConfig;
 import com.dashboard.app.entity.History;
 import com.dashboard.app.entity.Master;
 import com.dashboard.app.entity.Metrics;
-import com.dashboard.app.model.Project;
 import com.dashboard.app.model.Result;
 import com.dashboard.app.repo.HistoryRepository;
 import com.dashboard.app.repo.MasterRepository;
@@ -13,20 +11,21 @@ import com.dashboard.app.repo.MetricsRepository;
 import com.dashboard.app.util.GradeCalculator;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class SonarService {
@@ -63,9 +62,9 @@ public class SonarService {
                     Master master = new Master();
                     master.setKey(key);
                     master.setName(name);
-                    master.setDate( LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+                    master.setDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
                     master.setGateStatus("NOT_CHECKED"); // Default value; will be updated by fetchAndSaveMetrics()
-                    master.setReport_url(sonarQubeConfig.getSonarServerUrl()+"/dashboard?id=" + key);
+                    master.setReport_url(sonarQubeConfig.getSonarServerUrl() + "/dashboard?id=" + key);
 
                     masterRepo.save(master);
                 }
@@ -140,7 +139,7 @@ public class SonarService {
             metricsList.add(metrics);
             //calculate grade for each project based on metrics
             //String grade = calculateGrade(metrics.getVulnerabilities(), metrics.getMaintainability(), metrics.getBugs());
-           // Result result = GradeCalculator.calculateGradeAndRag(metrics.getCoverage(), metrics.getBugs(), metrics.getSecurityHotspots(), metrics.getVulnerabilities(), metrics.getMaintainability());
+            // Result result = GradeCalculator.calculateGradeAndRag(metrics.getCoverage(), metrics.getBugs(), metrics.getSecurityHotspots(), metrics.getVulnerabilities(), metrics.getMaintainability());
             Result result = GradeCalculator.calculateGradeAndRag(
                     metrics.getCoverage() != null ? metrics.getCoverage() : 0.0,
                     metrics.getBugs() != null ? metrics.getBugs() : 0,
@@ -157,36 +156,50 @@ public class SonarService {
     }
 
 
-    public ResponseEntity<String> exportToCSV(String outputPath) throws IOException {
+    public ResponseEntity<Resource> exportToCSV() {
         List<Metrics> data = metricsRepo.findAll();
 
-        try (PrintWriter writer = new PrintWriter(new File(outputPath))) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            PrintWriter writer = new PrintWriter(out);
             writer.println("Game Name,Sonar Report URL,Date,Quality Gate,Grade,RAG Status,Code Coverage %,Bugs,Code Smell,Security,Vulnerabilities,Tech Debt Ratio,Game Key");
+
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
             for (Metrics m : data) {
                 Master master = m.getMaster();
                 writer.printf("%s,%s,%s,%s,%s,%s,%s,%d,%d,%d,%d,%s,%s%n",
-                        master.getName(),
-                        master.getReport_url(),
-                        master.getDate().format(formatter),
+                        escapeCsv(master.getName()),
+                        escapeCsv(master.getReport_url()),
+                        master.getDate() != null ? master.getDate().format(formatter) : "",
                         master.getGateStatus(),
                         master.getGrade(),
                         master.getRagStatus(),
-                        m.getCoverage(),
+                        String.valueOf(m.getCoverage()),
                         m.getBugs(),
                         m.getCodeSmells(),
                         m.getSecurityHotspots(),
                         m.getVulnerabilities(),
-                        m.getMaintainability(),
+                        String.valueOf(m.getMaintainability()),
                         master.getKey()
                 );
             }
-        } catch (Exception e) {
-            return new ResponseEntity<>("Error in export :" + e.getMessage().toString(), HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>("successful export :", HttpStatus.OK);
 
+            writer.flush();
+            ByteArrayResource resource = new ByteArrayResource(out.toByteArray());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sonar-export.csv")
+                    .contentType(MediaType.parseMediaType("text/csv"))
+                    .contentLength(resource.contentLength())
+                    .body(resource);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
+
 
     public ResponseEntity<String> fetchHistoricalMetrics() {
         try {
@@ -251,6 +264,15 @@ public class SonarService {
         headers.setBasicAuth(sonarQubeConfig.getUserToken(), "");
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         return headers;
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "";
+        String escaped = value.replace("\"", "\"\""); // escape double quotes
+        if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n")) {
+            return "\"" + escaped + "\""; // wrap in quotes if needed
+        }
+        return escaped;
     }
 
 }

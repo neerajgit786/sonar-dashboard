@@ -1,50 +1,41 @@
 package com.dashboard.app.service.impl;
 
 import com.dashboard.app.model.GameReport;
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvValidationException;
+import com.dashboard.app.repo.MetricsRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class CsvService {
 
-    public List<GameReport> loadReports(String filePath) {
+    @Autowired
+    MetricsRepository metricsRepository;
+    public List<GameReport> loadReports() {
+        List<Object[]> rows = metricsRepository.fetchGameReports();
         List<GameReport> reports = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            boolean isFirst = true;
-            while ((line = br.readLine()) != null) {
-                if (isFirst) { isFirst = false; continue; } // skip header
-                String[] values = line.split(",");
 
-                if (values.length < 11) continue;
-
-                GameReport report = new GameReport();
-                report.setGameName(values[0]);
-                report.setSonarReportUrl(values[1]);
-                report.setDate(values[2]);
-                report.setQualityGate(values[3]);
-                report.setGrade(values[4]);
-                report.setRagStatus(values[5]);
-                report.setCodeCoverage(values[6]);
-                report.setBugs(values[7]);
-                report.setCodeSmell(values[8]);
-                report.setSecurity(values[9]);
-                report.setVulnerabilities(values[10]);
-                report.setTechDebtRatio(values[11]);
-                report.setKey(values[12]);
-
-                reports.add(report);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        for (Object[] row : rows) {
+            GameReport report = new GameReport(
+                    (String) row[0],  // gameName
+                    (String) row[1],  // key
+                    (String) row[2],  // sonarReportUrl
+                    (String) row[3],  // date
+                    (String) row[4],  // qualityGate
+                    (String) row[5],  // grade
+                    (String) row[6],  // ragStatus
+                    (String) row[7],  // codeCoverage
+                    (String) row[8],  // bugs
+                    (String) row[9],  // codeSmell
+                    (String) row[10], // security
+                    (String) row[11], // vulnerabilities
+                    (String) row[12]  // techDebtRatio
+            );
+            reports.add(report);
         }
+
         return reports;
     }
 }
