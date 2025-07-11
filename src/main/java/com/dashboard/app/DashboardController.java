@@ -6,6 +6,7 @@ import com.dashboard.app.service.impl.SonarService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -40,4 +41,8 @@ public class DashboardController {
         return ResponseEntity.ok("Refreshed");
     }
 
+@GetMapping("/styled-table")
+public String getStyledPage(Model model) {
+    return "css/app.css";
+}
 }
