@@ -1,13 +1,19 @@
 package com.dashboard.app.repo;
 
+import com.dashboard.app.entity.Master;
 import com.dashboard.app.entity.Metrics;
 import com.dashboard.app.model.GameReport;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MetricsRepository extends JpaRepository<Metrics, Long> {
+
+    @Query("SELECT mt FROM Metrics mt WHERE mt.master.id = :id")
+    Optional<Metrics> findMetricsByMasterId(@Param("id") Long id);
 
     @Query(value = """
         SELECT 

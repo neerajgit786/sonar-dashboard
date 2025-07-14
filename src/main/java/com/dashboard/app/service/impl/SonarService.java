@@ -23,10 +23,7 @@ import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class SonarService {
@@ -111,7 +108,10 @@ public class SonarService {
             ResponseEntity<JsonNode> metricsResponse = restTemplate.exchange(metricsUrl, HttpMethod.GET, entity, JsonNode.class);
             JsonNode measures = metricsResponse.getBody().get("component").get("measures");
 
-            Metrics metrics = new Metrics();
+            Metrics metrics = null;
+            Optional<Metrics> metricsOptional = metricsRepo.findMetricsByMasterId(master.getId());
+            metrics = ObjectUtils.isEmpty(metricsOptional) ? new Metrics() : metricsOptional.get();
+
             metrics.setMaster(master);
             metrics.setType("overall");
             metrics.setUpdatedDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));

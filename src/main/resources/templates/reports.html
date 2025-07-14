@@ -16,7 +16,7 @@
 
             const tableBody = document.getElementById('report-body');
             tableBody.innerHTML = ''; // clear table
-
+            var srno = 0;
             data.forEach(report => {
                 let qualityGateStyle = report.qualityGate === 'PASSED'
                     ? 'background-color: #4CAF50; color: white;'
@@ -26,7 +26,9 @@
                     : (report.ragStatus === 'Amber'
                     ? 'font-weight: bold;color: #FFBF00;' : 'font-weight: bold;color: #EF4B4B;');
 
-                 let row = `<tr>
+                  srno=srno+1;
+                let row = `<tr>
+                    <td>${srno}</td>
                     <td>${report.gameName}</td>
                     <td>${report.key}</td>
                     <td>${report.date}</td>
