@@ -15,6 +15,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayOutputStream;
@@ -57,17 +58,23 @@ public class SonarService {
             for (JsonNode project : components) {
                 String key = project.get("key").asText();
                 String name = project.get("name").asText();
-
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
+                Master master = null;
                 if (!masterRepo.existsByKey(key)) {
-                    Master master = new Master();
+                     master = new Master();
                     master.setKey(key);
                     master.setName(name);
-                    master.setDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+                    master.setDate(LocalDateTime.parse(project.get("lastAnalysisDate").asText(), formatter));
                     master.setGateStatus("NOT_CHECKED"); // Default value; will be updated by fetchAndSaveMetrics()
                     master.setReport_url(sonarQubeConfig.getSonarServerUrl() + "/dashboard?id=" + key);
-
-                    masterRepo.save(master);
                 }
+                else
+                {
+                    master = masterRepo.findByProjectKey(key);
+                   master.setDate(ObjectUtils.isEmpty(project.get("lastAnalysisDate"))?LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS) :
+                    LocalDateTime.parse(project.get("lastAnalysisDate").asText(), formatter));
+                }
+                masterRepo.save(master);
                 projectKeyList.add(key);
             }
         }
@@ -94,7 +101,7 @@ public class SonarService {
             String gateStatus = gate
                     .get("status").asText().equals("OK") ? "PASSED" : "FAILED";
 
-            master.setDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+//            master.setDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
             master.setGateStatus(gateStatus);
             master.setReport_url("http://localhost:9000/dashboard?id=" + master.getName());
 
