@@ -2,7 +2,6 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <link th:href="@{/css/app.css}" rel="stylesheet" />
-    <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>IG Sonar Dashboard</title>
     <script>
@@ -16,6 +15,7 @@
 
             const tableBody = document.getElementById('report-body');
             tableBody.innerHTML = ''; // clear table
+
             var srno = 0;
             data.forEach(report => {
                 let qualityGateStyle = report.qualityGate === 'PASSED'
@@ -25,6 +25,7 @@
                     ? 'font-weight: bold; color: #4CAF50;'
                     : (report.ragStatus === 'Amber'
                     ? 'font-weight: bold;color: #FFBF00;' : 'font-weight: bold;color: #EF4B4B;');
+				srno=srno+1;
 
                   srno=srno+1;
                 let row = `<tr>
@@ -38,7 +39,7 @@
                     <td>${report.codeSmell}</td>
                     <td>${report.security}</td>
                     <td>${report.vulnerabilities}</td>
-                    <td>${report.grade}</td>
+                    <td style="font-weight: bold;">${report.grade}</td>
                     <td style="${ragStatusStyle}">${report.ragStatus}</td>
                     <td><a href="${report.sonarReportUrl}" target="_blank">Link</a></td>
                 </tr>`;
