@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Game Reports</title>
+    <link th:href="@{/css/app.css}" rel="stylesheet" />
+    <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>IG Sonar Dashboard</title>
     <script>
         let currentReports = [];
 
@@ -16,23 +19,26 @@
 
             data.forEach(report => {
                 let qualityGateStyle = report.qualityGate === 'PASSED'
-                    ? 'background-color: green; color: white;'
-                    : 'background-color: red; color: white;';
+                    ? 'background-color: #4CAF50; color: white;'
+                    : 'background-color: #EF4B4B; color: white;';
+                let ragStatusStyle = report.ragStatus === 'Green'
+                    ? 'font-weight: bold; color: #4CAF50;'
+                    : (report.ragStatus === 'Amber'
+                    ? 'font-weight: bold;color: #FFBF00;' : 'font-weight: bold;color: #EF4B4B;');
 
-                let row = `<tr>
+                 let row = `<tr>
                     <td>${report.gameName}</td>
-                    <td><a href="${report.sonarReportUrl}" target="_blank">Link</a></td>
+                    <td>${report.key}</td>
                     <td>${report.date}</td>
-                    <td style="${qualityGateStyle}">${report.qualityGate}</td>
-                    <td>${report.grade}</td>
-                    <td>${report.ragStatus}</td>
+                     <td style="${qualityGateStyle}">${report.qualityGate}</td>
                     <td>${report.codeCoverage}</td>
                     <td>${report.bugs}</td>
                     <td>${report.codeSmell}</td>
                     <td>${report.security}</td>
                     <td>${report.vulnerabilities}</td>
-                    <td>${report.techDebtRatio}</td>
-                    <td>${report.key}</td>
+                    <td>${report.grade}</td>
+                    <td style="${ragStatusStyle}">${report.ragStatus}</td>
+                    <td><a href="${report.sonarReportUrl}" target="_blank">Link</a></td>
                 </tr>`;
                 tableBody.innerHTML += row;
             });
@@ -91,35 +97,70 @@
         }
 
         window.onload = loadReports;
+
     </script>
 </head>
 <body>
-<h1>Game Reports</h1>
 
-<!-- Buttons -->
-<button onclick="downloadCSV()">Download CSV</button>
-<button onclick="refreshReports()">Refresh</button>
+    <div class="header">
+        <img src="/images/ig-logo.png" alt="Company Logo" class="logo"/>
+        <div class="label">Sonar Dashboard</div>
+        <button class="btn refresh-btn" onclick="refreshReports()"><i class="fas fa-sync-alt"></i> Refresh</button>
+        <button class="btn download-btn" onclick="downloadCSV()"><i class="fas fa-download"></i> Download</button></div>
 
-<!-- Report Table -->
-<table border="1" style="margin-top:10px;">
-    <thead>
-    <tr>
-        <th>Game Name</th>
-        <th>Sonar Report URL</th>
-        <th>Date</th>
-        <th>Quality Gate</th>
-        <th>Grade</th>
-        <th>RAG Status</th>
-        <th>Code Coverage %</th>
-        <th>Bugs</th>
-        <th>Code Smell</th>
-        <th>Security</th>
-        <th>Vulnerabilities</th>
-        <th>Tech Debt Ratio</th>
-        <th>Game Key</th>
-    </tr>
-    </thead>
-    <tbody id="report-body"></tbody>
-</table>
+    <table class="styled-table">
+        <tr>
+            <th>Seq No.</th>
+            <th>Project Name</th>
+            <th>Project Key</th>
+            <th>Run Date</th>
+            <th>Quality Gate</th>
+            <th>Coverage%</th>
+            <th>Bugs</th>
+            <th>Code Smell</th>
+            <th>Security</th>
+            <th>Vulnerabilities</th>
+            <th>Grade</th>
+            <th>RAG Status</th>
+            <th>Sonar URL</th>
+        </tr>
+        <tbody id="report-body"></tbody>
+    </table>
 </body>
 </html>
+
+
+
+
+<!--    </script>-->
+<!--</head>-->
+<!--<body>-->
+<!--<h1>Game Reports</h1>-->
+
+<!--&lt;!&ndash; Buttons &ndash;&gt;-->
+<!--<button onclick="downloadCSV()">Download CSV</button>-->
+<!--<button onclick="refreshReports()">Refresh</button>-->
+
+<!--&lt;!&ndash; Report Table &ndash;&gt;-->
+<!--<table border="1" style="margin-top:10px;">-->
+<!--    <thead>-->
+<!--    <tr>-->
+<!--        <th>Game Name</th>-->
+<!--        <th>Sonar Report URL</th>-->
+<!--        <th>Date</th>-->
+<!--        <th>Quality Gate</th>-->
+<!--        <th>Grade</th>-->
+<!--        <th>RAG Status</th>-->
+<!--        <th>Code Coverage %</th>-->
+<!--        <th>Bugs</th>-->
+<!--        <th>Code Smell</th>-->
+<!--        <th>Security</th>-->
+<!--        <th>Vulnerabilities</th>-->
+<!--        <th>Tech Debt Ratio</th>-->
+<!--        <th>Game Key</th>-->
+<!--    </tr>-->
+<!--    </thead>-->
+<!--    <tbody id="report-body"></tbody>-->
+<!--</table>-->
+<!--</body>-->
+<!--</html>-->
