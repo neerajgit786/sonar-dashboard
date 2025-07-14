@@ -103,7 +103,7 @@ public class SonarService {
 
 //            master.setDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
             master.setGateStatus(gateStatus);
-            master.setReport_url("http://localhost:9000/dashboard?id=" + master.getName());
+            master.setReport_url(sonarQubeConfig.getSonarServerUrl() + "/dashboard?id=" + master.getKey());
 
             String metricsUrl = sonarQubeConfig.getSonarServerUrl() + "/api/measures/component?component=" + master.getKey() +
                     "&metricKeys=coverage,bugs,code_smells,vulnerabilities,security_hotspots,sqale_debt_ratio&additionalFields=period";
