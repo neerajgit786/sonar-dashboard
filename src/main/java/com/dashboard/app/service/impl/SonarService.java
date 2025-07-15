@@ -23,10 +23,7 @@ import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class SonarService {
@@ -103,7 +100,7 @@ public class SonarService {
 
 //            master.setDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
             master.setGateStatus(gateStatus);
-            master.setReport_url("http://localhost:9000/dashboard?id=" + master.getName());
+            master.setReport_url(sonarQubeConfig.getSonarServerUrl() + "/dashboard?id=" + master.getKey());
 
             String metricsUrl = sonarQubeConfig.getSonarServerUrl() + "/api/measures/component?component=" + master.getKey() +
                     "&metricKeys=coverage,bugs,code_smells,vulnerabilities,security_hotspots,sqale_debt_ratio&additionalFields=period";
@@ -111,7 +108,10 @@ public class SonarService {
             ResponseEntity<JsonNode> metricsResponse = restTemplate.exchange(metricsUrl, HttpMethod.GET, entity, JsonNode.class);
             JsonNode measures = metricsResponse.getBody().get("component").get("measures");
 
-            Metrics metrics = new Metrics();
+            Metrics metrics = null;
+            Optional<Metrics> metricsOptional = metricsRepo.findMetricsByMasterId(master.getId());
+            metrics = ObjectUtils.isEmpty(metricsOptional) ? new Metrics() : metricsOptional.get();
+
             metrics.setMaster(master);
             metrics.setType("overall");
             metrics.setUpdatedDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
