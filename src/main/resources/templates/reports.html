@@ -99,6 +99,45 @@
 
         window.onload = loadReports;
 
+let sortDirection = {};
+
+function sortTable(colIndex) {
+  const table = document.getElementById("myTable");
+  const rows = Array.from(table.rows).slice(1); // exclude header
+  const ths = table.querySelectorAll("th");
+
+  // Reset all column headers
+  ths.forEach(th => th.classList.remove("sort-asc", "sort-desc"));
+
+  let ascending = !sortDirection[colIndex]; // toggle direction
+  sortDirection[colIndex] = ascending;
+
+  ths[colIndex].classList.add(ascending ? "sort-asc" : "sort-desc");
+
+  rows.sort((rowA, rowB) => {
+    let valA = rowA.cells[colIndex].innerText;
+    let valB = rowB.cells[colIndex].innerText;
+
+    // Check if numeric
+    const isNumeric = !isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB));
+    if (isNumeric) {
+      valA = parseFloat(valA);
+      valB = parseFloat(valB);
+    } else {
+      valA = valA.toLowerCase();
+      valB = valB.toLowerCase();
+    }
+
+    if (valA < valB) return ascending ? -1 : 1;
+    if (valA > valB) return ascending ? 1 : -1;
+    return 0;
+  });
+
+  // Append sorted rows
+  const tbody = table.tBodies[0];
+  tbody.innerHTML = "";
+  rows.forEach(row => tbody.appendChild(row));
+}
     </script>
 </head>
 <body>
@@ -109,20 +148,20 @@
         <button class="btn refresh-btn" onclick="refreshReports()"><i class="fas fa-sync-alt"></i> Refresh</button>
         <button class="btn download-btn" onclick="downloadCSV()"><i class="fas fa-download"></i> Download</button></div>
 
-    <table class="styled-table">
+    <table class="styled-table" id="myTable">
         <tr>
-            <th>Seq No.</th>
-            <th>Project Name</th>
-            <th>Project Key</th>
-            <th>Run Date</th>
-            <th>Quality Gate</th>
-            <th>Coverage%</th>
-            <th>Bugs</th>
-            <th>Code Smell</th>
-            <th>Security</th>
-            <th>Vulnerabilities</th>
-            <th>Grade</th>
-            <th>RAG Status</th>
+            <th onclick="sortTable(0)">Seq No.</th>
+            <th onclick="sortTable(1)">Project Name</th>
+            <th onclick="sortTable(2)">Project Key</th>
+            <th onclick="sortTable(3)">Run Date</th>
+            <th onclick="sortTable(4)">Quality Gate</th>
+            <th onclick="sortTable(5)">Coverage%</th>
+            <th onclick="sortTable(6)">Bugs</th>
+            <th onclick="sortTable(7)">Code Smell</th>
+            <th onclick="sortTable(8)">Security</th>
+            <th onclick="sortTable(9)">Vulnerabilities</th>
+            <th onclick="sortTable(10)">Grade</th>
+            <th onclick="sortTable(11)">RAG Status</th>
             <th>Sonar URL</th>
         </tr>
         <tbody id="report-body"></tbody>
