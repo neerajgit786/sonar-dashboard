@@ -27,7 +27,6 @@
                     ? 'font-weight: bold;color: #FFBF00;' : 'font-weight: bold;color: #EF4B4B;');
 				srno=srno+1;
 
-                  srno=srno+1;
                 let row = `<tr>
                     <td>${srno}</td>
                     <td>${report.gameName}</td>
@@ -105,6 +104,7 @@ let sortDirection = {};
 
 function sortTable(colIndex) {
   const table = document.getElementById("myTable");
+  const firstRow = Array.from(table.rows)[0];
   const rows = Array.from(table.rows).slice(1); // exclude header
   const ths = table.querySelectorAll("th");
 
@@ -138,6 +138,7 @@ function sortTable(colIndex) {
   // Append sorted rows
   const tbody = table.tBodies[0];
   tbody.innerHTML = "";
+  tbody.appendChild(firstRow); 
   rows.forEach(row => tbody.appendChild(row));
 }
     </script>
