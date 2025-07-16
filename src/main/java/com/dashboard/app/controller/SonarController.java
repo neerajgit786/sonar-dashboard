@@ -1,7 +1,6 @@
-package com.dashboard.app;
+package com.dashboard.app.controller;
 
-import com.dashboard.app.service.SonarQubeService;
-import com.dashboard.app.service.impl.SonarDbService;
+
 import com.dashboard.app.service.impl.SonarService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -15,12 +14,10 @@ import java.util.List;
 
 @RestController
 public class SonarController {
-    @Autowired
-    private SonarQubeService sonarQubeService;
+
     @Autowired
     private SonarService sonarService;
-    @Autowired
-    private SonarDbService sonarDbService;
+
 
     @RequestMapping("/")
     String hello() {

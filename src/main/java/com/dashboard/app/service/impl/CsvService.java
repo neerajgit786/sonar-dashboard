@@ -13,8 +13,17 @@ public class CsvService {
 
     @Autowired
     MetricsRepository metricsRepository;
+    @Autowired
+    SonarService sonarService;
+
     public List<GameReport> loadReports() {
         List<Object[]> rows = metricsRepository.fetchGameReports();
+        if(rows.size()<=0)
+        {
+            sonarService.fetchAndSaveProjects();
+            sonarService.fetchAndSaveMetrics();
+           rows = metricsRepository.fetchGameReports();
+        }
         List<GameReport> reports = new ArrayList<>();
 
         for (Object[] row : rows) {
