@@ -1,4 +1,4 @@
-package com.dashboard.app;
+package com.dashboard.app.controller;
 
 import com.dashboard.app.model.GameReport;
 import com.dashboard.app.service.impl.CsvService;
@@ -23,7 +23,7 @@ public class DashboardController {
 
     @GetMapping("/dashboard/reports")
     public String getReportsPage() {
-        return "reports"; // Will render templates/reports.html
+        return "reports";
     }
 
     @ResponseBody
@@ -40,9 +40,4 @@ public class DashboardController {
         sonarService.fetchAndSaveMetrics();
         return ResponseEntity.ok("Refreshed");
     }
-
-@GetMapping("/styled-table")
-public String getStyledPage(Model model) {
-    return "css/app.css";
-}
 }
