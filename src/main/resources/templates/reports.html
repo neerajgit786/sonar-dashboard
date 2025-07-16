@@ -119,6 +119,15 @@ function sortTable(colIndex) {
   rows.sort((rowA, rowB) => {
     let valA = rowA.cells[colIndex].innerText;
     let valB = rowB.cells[colIndex].innerText;
+	// check for date
+	const dateA = parseCustomDate(valA);
+    const dateB = parseCustomDate(valB);
+	if( dateA != null && dateB != null){
+		//alert('valA='+valA+',valB='+valB+',sortDirection='+sortDirection);
+		if (dateA < dateB) return ascending ? -1 : 1;
+		if (dateA > dateB) return ascending ? 1 : -1;
+		return 0;
+	}
 
     // Check if numeric
     const isNumeric = !isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB));
@@ -141,6 +150,16 @@ function sortTable(colIndex) {
   tbody.appendChild(firstRow); 
   rows.forEach(row => tbody.appendChild(row));
 }
+function parseCustomDate(dateStr) {
+      const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+      if (!regex.test(dateStr)) return null;
+
+      const [datePart, timePart] = dateStr.split(" ");
+      const [year, month, day] = datePart.split("-").map(Number);
+      const [hour, minute, second] = timePart.split(":").map(Number);
+
+      return new Date(year, month - 1, day, hour, minute, second);
+    }
     </script>
 </head>
 <body>
