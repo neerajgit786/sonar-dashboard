@@ -106,7 +106,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>com.example.demo.DemoApplication</mainClass> <!-- Your main class -->
+							<mainClass>com.dashboard.MainApplication</mainClass> <!-- Your main class -->
 						</manifest>
 					</archive>
 				</configuration>

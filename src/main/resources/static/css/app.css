@@ -27,6 +27,7 @@
     font-family: sans-serif;
     min-width: 300px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    
 }
 
 .styled-table thead tr {
@@ -43,7 +44,15 @@
     font-size: 0.9em;
     font-family: sans-serif;
     white-space: nowrap;
+    cursor: pointer;
 }
+.styled-table th.sort-asc::after {
+      content: "🔼";
+    }
+.styled-table th.sort-desc::after {
+      content: " 🔽";
+    }
+    
 .styled-table td {
     padding: 10px 10px;
     text-align: left;

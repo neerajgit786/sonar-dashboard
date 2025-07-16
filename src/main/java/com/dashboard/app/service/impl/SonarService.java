@@ -61,6 +61,7 @@ public class SonarService {
                      master = new Master();
                     master.setKey(key);
                     master.setName(name);
+
                     master.setDate(ObjectUtils.isEmpty(project.get("lastAnalysisDate"))?LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS) :
                             LocalDateTime.parse(project.get("lastAnalysisDate").asText(), formatter));
                     master.setGateStatus("NOT_CHECKED"); // Default value; will be updated by fetchAndSaveMetrics()
