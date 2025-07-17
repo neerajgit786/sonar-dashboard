@@ -8,7 +8,7 @@
       display: flex;
       align-items: center;
       gap: 15px;
-      margin-left: 60px;
+      margin-left: 50px;
     }
 
 .styled-table-top {
@@ -108,7 +108,7 @@
   background-color: #F082AC;
 }
 .logo {
-      width: 26px;
+      width: 40px;
       height: 26px;
       font-family: Arial, sans-serif;
     }
@@ -133,4 +133,11 @@
 
 .download-btn {
       background-color: #2196F3;
+    }
+
+.config-btn {
+      background-color: #31363b;
+    }
+.save-btn {
+      background-color: #31363b;
     }

@@ -4,6 +4,7 @@ import com.dashboard.app.config.SonarQubeConfig;
 import com.dashboard.app.entity.History;
 import com.dashboard.app.entity.Master;
 import com.dashboard.app.entity.Metrics;
+import com.dashboard.app.model.Project;
 import com.dashboard.app.model.Result;
 import com.dashboard.app.repo.HistoryRepository;
 import com.dashboard.app.repo.MasterRepository;
@@ -11,6 +12,7 @@ import com.dashboard.app.repo.MetricsRepository;
 import com.dashboard.app.util.GradeCalculator;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.autoconfigure.observation.ObservationProperties;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
@@ -24,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class SonarService {
@@ -282,6 +285,38 @@ public class SonarService {
             return "\"" + escaped + "\""; // wrap in quotes if needed
         }
         return escaped;
+    }
+
+    public ResponseEntity<Void> configurationSave(List<String> addedProjects,List<String> removedProjects)
+    {
+        try {
+            String[] projectKeysToBeAdded = addedProjects.toArray(new String[0]);
+            String[] projectKeysToBeRemoved = removedProjects.toArray(new String[0]);
+            List<Master> masterList = new ArrayList<Master>();
+            List<Master> projectList = masterRepo.findAll();
+            Map<String, Master> keyProjectMap = projectList.stream().collect(Collectors.toMap(e -> e.getKey(), e -> e));
+            for (String project : projectKeysToBeAdded) {
+                keyProjectMap.get(project).setDisplay(Boolean.TRUE);
+                masterList.add(keyProjectMap.get(project));
+            }
+            for (String project : projectKeysToBeRemoved) {
+                keyProjectMap.get(project).setDisplay(Boolean.FALSE);
+                masterList.add(keyProjectMap.get(project));
+            }
+            masterRepo.saveAll(masterList);
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+        catch (Exception e)
+        {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public List<String> getDisplayList()
+    {
+        List<Master> projectList = masterRepo.findByDisplay();
+        List<String> projectKeys = projectList.stream().map(e->e.getKey()).collect(Collectors.toList());
+        return projectKeys;
     }
 
 }

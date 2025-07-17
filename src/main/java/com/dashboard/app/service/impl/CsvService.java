@@ -40,7 +40,8 @@ public class CsvService {
                     (String) row[9],  // codeSmell
                     (String) row[10], // security
                     (String) row[11], // vulnerabilities
-                    (String) row[12]  // techDebtRatio
+                    (String) row[12],  // techDebtRatio
+                     (Boolean) row[13]
             );
             reports.add(report);
         }

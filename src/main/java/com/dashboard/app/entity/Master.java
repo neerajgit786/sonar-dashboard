@@ -28,4 +28,6 @@ public class Master {
     private String grade;
     @Column(name = "RAG_status")
     private String ragStatus;
+    @Column(name = "display")
+    private Boolean display = false;
 }
