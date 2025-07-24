@@ -57,18 +57,18 @@
     <thead>
     <tr>
         <th id="checkbox-header" style="display: none;"></th>
-        <th onclick="sortTable(0)">Seq No.</th>
-        <th onclick="sortTable(1)">Project Name</th>
-        <th onclick="sortTable(2)">Project Key</th>
-        <th onclick="sortTable(3)">Run Date</th>
-        <th onclick="sortTable(4)">Quality Gate</th>
-        <th onclick="sortTable(5)">Coverage%</th>
-        <th onclick="sortTable(6)">Bugs</th>
-        <th onclick="sortTable(7)">Code Smell</th>
-        <th onclick="sortTable(8)">Security</th>
-        <th onclick="sortTable(9)">Vulnerabilities</th>
-        <th onclick="sortTable(10)">Grade</th>
-        <th onclick="sortTable(11)">RAG Status</th>
+        <th onclick="sortTable(1)">Seq No.</th>
+        <th onclick="sortTable(2)">Project Name</th>
+        <th onclick="sortTable(3)">Project Key</th>
+        <th onclick="sortTable(4)">Run Date</th>
+        <th onclick="sortTable(5)">Quality Gate</th>
+        <th onclick="sortTable(6)">Coverage%</th>
+        <th onclick="sortTable(7)">Bugs</th>
+        <th onclick="sortTable(8)">Code Smell</th>
+        <th onclick="sortTable(9)">Security</th>
+        <th onclick="sortTable(10)">Vulnerabilities</th>
+        <th onclick="sortTable(11)">Grade</th>
+        <th onclick="sortTable(12)">RAG Status</th>
         <th>Sonar URL</th>
     </tr>
     </thead>
@@ -80,17 +80,31 @@
     let configMode = false;
     let originalDisplayList = new Set();
     let sortDirection = {};
+    let currentSortColumn = null;
+
+    const columnKeys = [
+        null, 'seq', 'gameName', 'key', 'date', 'qualityGate', 'codeCoverage',
+        'bugs', 'codeSmell', 'security', 'vulnerabilities', 'grade', 'ragStatus'
+    ];
 
     async function loadReports() {
         const response = await fetch('/dashboard/reports/data');
         const data = await response.json();
         currentReports = data;
 
+        if (currentSortColumn !== null) {
+            applySort(currentSortColumn, sortDirection[currentSortColumn] ?? true);
+        }
+
+        renderTable();
+    }
+
+    function renderTable() {
         const tableBody = document.getElementById('report-body');
         tableBody.innerHTML = '';
         let srno = 0;
 
-        data.filter(report => configMode || report.display === true).forEach((report, index) => {
+        currentReports.filter(report => configMode || report.display === true).forEach((report) => {
             srno += 1;
             let qualityGateStyle = report.qualityGate === 'PASSED'
                 ? 'background-color: #4CAF50; color: white;'
@@ -134,7 +148,7 @@
         if (configMode) {
             try {
                 const resp = await fetch('/dashboard/display-list');
-                const keys = await resp.json(); // Expect: ["project-key-1", "project-key-2"]
+                const keys = await resp.json();
                 originalDisplayList = new Set(keys);
             } catch (e) {
                 alert("Failed to fetch display list.");
@@ -145,7 +159,7 @@
             originalDisplayList = new Set();
         }
 
-        await loadReports();
+        renderTable();
     }
 
     async function saveSelected() {
@@ -230,27 +244,29 @@
     }
 
     function sortTable(colIndex) {
-        const table = document.getElementById("myTable");
-        const firstRow = Array.from(table.rows)[0];
-        const rows = Array.from(table.rows).slice(1);
-        const ths = table.querySelectorAll("th");
+        const key = columnKeys[colIndex];
+        if (!key) return;
 
-        ths.forEach(th => th.classList.remove("sort-asc", "sort-desc"));
-
-        let ascending = !sortDirection[colIndex];
+        const ascending = !(sortDirection[colIndex] || false);
+        sortDirection = {};
         sortDirection[colIndex] = ascending;
+        currentSortColumn = colIndex;
 
-        ths[colIndex].classList.add(ascending ? "sort-asc" : "sort-desc");
+        applySort(colIndex, ascending);
+        renderTable();
+        highlightSortedColumn(colIndex, ascending);
+    }
 
-        rows.sort((rowA, rowB) => {
-            let valA = rowA.cells[colIndex].innerText;
-            let valB = rowB.cells[colIndex].innerText;
+    function applySort(colIndex, ascending) {
+        const key = columnKeys[colIndex];
+        currentReports.sort((a, b) => {
+            let valA = a[key];
+            let valB = b[key];
 
-            const isNumeric = !isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB));
-            if (isNumeric) {
+            if (!isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB))) {
                 valA = parseFloat(valA);
                 valB = parseFloat(valB);
-            } else {
+            } else if (typeof valA === 'string' && typeof valB === 'string') {
                 valA = valA.toLowerCase();
                 valB = valB.toLowerCase();
             }
@@ -259,11 +275,16 @@
             if (valA > valB) return ascending ? 1 : -1;
             return 0;
         });
+    }
 
-        const tbody = table.tBodies[0];
-        tbody.innerHTML = "";
-        tbody.appendChild(firstRow);
-        rows.forEach(row => tbody.appendChild(row));
+    function highlightSortedColumn(colIndex, ascending) {
+        const ths = document.querySelectorAll("th");
+        ths.forEach((th, index) => {
+            th.classList.remove("sort-asc", "sort-desc");
+            if (index === colIndex) {
+                th.classList.add(ascending ? "sort-asc" : "sort-desc");
+            }
+        });
     }
 
     window.onload = loadReports;
