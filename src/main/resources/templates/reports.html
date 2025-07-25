@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>IG Sonar Dashboard</title>
+    <link th:href="@{/css/app.css}" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .btn {
+            margin-left: 10px;
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .logo {
+            height: 40px;
+            width: 40px;
+            margin-right: 20px;
+        }
+        .label {
+            font-size: 26px;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+        .styled-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .styled-table th, .styled-table td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            text-align: center;
+        }
+        .styled-table th.sort-asc::after {
+            content: " ▲";
+        }
+        .styled-table th.sort-desc::after {
+            content: " ▼";
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <img src="/images/ig-logo.png" alt="Company Logo" class="logo" />
+    <div class="label">Sonar Dashboard</div>
+    <button class="btn refresh-btn" onclick="refreshReports()"><i class="fas fa-sync-alt"></i> Refresh</button>
+    <button class="btn download-btn" onclick="downloadCSV()"><i class="fas fa-download"></i> Download</button>
+    <button class="btn config-btn" onclick="toggleConfigMode()"><i class="fas fa-cog"></i> Config</button>
+    <button class="btn save-btn" onclick="saveSelected()" style="display:none;"><i class="fas fa-save"></i> Save</button>
+
+</div>
+<div class="header">
+    <div class="note" style="display:none;">Select/DeSelect Checkboxes to ADD/REMOVE projects on dashboard</div>
+</div>
+
+<table class="styled-table" id="myTable">
+    <thead>
+    <tr>
+        <th id="checkbox-header" style="display: none;"></th>
+        <th onclick="sortTable(1)">Seq No.</th>
+        <th onclick="sortTable(2)">Project Name</th>
+        <th onclick="sortTable(3)">Project Key</th>
+        <th>Vendor</th>
+        <th onclick="sortTable(5)">Run Date</th>
+        <th onclick="sortTable(6)">Quality Gate</th>
+        <th onclick="sortTable(7)">Coverage%</th>
+        <th onclick="sortTable(8)">Bugs</th>
+        <th onclick="sortTable(9)">Code Smell</th>
+        <th onclick="sortTable(10)">Security</th>
+        <th onclick="sortTable(11)">Vulnerabilities</th>
+        <th onclick="sortTable(12)">Grade</th>
+        <th onclick="sortTable(13)">RAG Status</th>
+        <th>Sonar URL</th>
+    </tr>
+    </thead>
+    <tbody id="report-body"></tbody>
+</table>
+
+<script>
+    let currentReports = [];
+    let configMode = false;
+    let originalDisplayList = new Set();
+    let sortDirection = {};
+    let currentSortColumn = null;
+
+    const columnKeys = [
+        null, 'seq', 'gameName', 'key', 'date', 'qualityGate', 'codeCoverage',
+        'bugs', 'codeSmell', 'security', 'vulnerabilities', 'grade', 'ragStatus'
+    ];
+
+    async function loadReports() {
+        const response = await fetch('/dashboard/reports/data');
+        const data = await response.json();
+        currentReports = data;
+
+        if (currentSortColumn !== null) {
+            applySort(currentSortColumn, sortDirection[currentSortColumn] ?? true);
+        }
+
+        renderTable();
+    }
+
+    function renderTable() {
+        const tableBody = document.getElementById('report-body');
+        tableBody.innerHTML = '';
+        let srno = 0;
+
+        currentReports.filter(report => configMode || report.display === true).forEach((report) => {
+            srno += 1;
+            let qualityGateStyle = report.qualityGate === 'PASSED'
+                ? 'background-color: #4CAF50; color: white;'
+                : 'background-color: #EF4B4B; color: white;';
+            let ragStatusStyle = report.ragStatus === 'Green'
+                ? 'font-weight: bold; color: #4CAF50;'
+                : report.ragStatus === 'Amber'
+                    ? 'font-weight: bold; color: #FFBF00;'
+                    : 'font-weight: bold; color: #EF4B4B;';
+
+            let checked = originalDisplayList.has(report.key) ? 'checked' : '';
+            let checkboxCell = configMode
+                ? `<td><input type="checkbox" class="row-checkbox" data-key="${report.key}" ${checked} /></td>`
+                : '<td style="display: none;"></td>';
+
+             const vendorCell = configMode
+                    ? `<td><input type="text" class="vendor-input" data-key="${report.key}" value="${report.vendor || ''}"></td>`
+                    : `<td>${report.vendor || ''}</td>`;
+
+            let row = `<tr>
+                ${checkboxCell}
+                <td>${srno}</td>
+                <td>${report.gameName}</td>
+                <td>${report.key}</td>
+                ${vendorCell}
+                <td>${report.date}</td>
+                <td style="${qualityGateStyle}">${report.qualityGate}</td>
+                <td>${report.codeCoverage}</td>
+                <td>${report.bugs}</td>
+                <td>${report.codeSmell}</td>
+                <td>${report.security}</td>
+                <td>${report.vulnerabilities}</td>
+                <td style="font-weight: bold;">${report.grade}</td>
+                <td style="${ragStatusStyle}">${report.ragStatus}</td>
+                <td><a href="${report.sonarReportUrl}" target="_blank">Link</a></td>
+            </tr>`;
+            tableBody.innerHTML += row;
+        });
+    }
+
+    async function toggleConfigMode() {
+        configMode = !configMode;
+        document.querySelector(".save-btn").style.display = configMode ? "inline-block" : "none";
+        document.getElementById("checkbox-header").style.display = configMode ? "table-cell" : "none";
+        document.querySelector(".note").style.display = configMode ? "inline-block" : "none";
+
+        if (configMode) {
+            try {
+                const resp = await fetch('/dashboard/display-list');
+                const keys = await resp.json();
+                originalDisplayList = new Set(keys);
+            } catch (e) {
+                alert("Failed to fetch display list.");
+                console.error(e);
+                originalDisplayList = new Set();
+            }
+        } else {
+            originalDisplayList = new Set();
+        }
+
+        renderTable();
+    }
+
+    async function saveSelected() {
+        const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+        const selectedKeys = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-key'));
+        const selectedSet = new Set(selectedKeys);
+
+        const addedProjects = [...selectedSet].filter(key => !originalDisplayList.has(key));
+        const removedProjects = [...originalDisplayList].filter(key => !selectedSet.has(key));
+        const vendorInputs = document.querySelectorAll('.vendor-input');
+        const vendorNodesList = Array.from(vendorInputs).map(input => ({
+            key: input.getAttribute('data-key'),
+            vendorName: input.value.trim()
+        }));
+
+        try {
+            const response = await fetch('/dashboard/display/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    addedProjects,
+                    removedProjects,
+                    vendorNodesList
+                })
+            });
+
+            if (response.ok) {
+                alert("Display list updated successfully.");
+                configMode = false;
+                document.querySelector(".save-btn").style.display = "none";
+                document.getElementById("checkbox-header").style.display = "none";
+                await loadReports();
+            } else {
+                alert("Failed to save display settings.");
+            }
+        } catch (error) {
+            console.error("Error saving display list:", error);
+            alert("Error during save.");
+        }
+    }
+
+    async function refreshReports() {
+        try {
+            const response = await fetch('/dashboard/refresh', { method: 'POST' });
+            if (response.ok) {
+                alert('Data refreshed successfully!');
+                await loadReports();
+            } else {
+                alert('Failed to refresh data.');
+            }
+        } catch (error) {
+            alert('Error while refreshing data.');
+            console.error(error);
+        }
+    }
+
+    async function downloadCSV() {
+        try {
+            const response = await fetch('/sonar/export');
+            if (!response.ok) {
+                alert('Failed to download file.');
+                return;
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+
+            const disposition = response.headers.get('Content-Disposition');
+            let filename = 'game_reports.csv';
+            if (disposition && disposition.includes('filename=')) {
+                const match = disposition.match(/filename="?([^"]+)"?/);
+                if (match && match[1]) filename = match[1];
+            }
+            a.download = filename;
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            alert('Download successful!');
+        } catch (error) {
+            alert('Error while downloading file.');
+            console.error(error);
+        }
+    }
+
+    function sortTable(colIndex) {
+        const key = columnKeys[colIndex];
+        if (!key) return;
+
+        const ascending = !(sortDirection[colIndex] || false);
+        sortDirection = {};
+        sortDirection[colIndex] = ascending;
+        currentSortColumn = colIndex;
+
+        applySort(colIndex, ascending);
+        renderTable();
+        highlightSortedColumn(colIndex, ascending);
+    }
+
+    function applySort(colIndex, ascending) {
+        const key = columnKeys[colIndex];
+        currentReports.sort((a, b) => {
+            let valA = a[key];
+            let valB = b[key];
+
+            if (!isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB))) {
+                valA = parseFloat(valA);
+                valB = parseFloat(valB);
+            } else if (typeof valA === 'string' && typeof valB === 'string') {
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+            }
+
+            if (valA < valB) return ascending ? -1 : 1;
+            if (valA > valB) return ascending ? 1 : -1;
+            return 0;
+        });
+    }
+
+    function highlightSortedColumn(colIndex, ascending) {
+        const ths = document.querySelectorAll("th");
+        ths.forEach((th, index) => {
+            th.classList.remove("sort-asc", "sort-desc");
+            if (index === colIndex) {
+                th.classList.add(ascending ? "sort-asc" : "sort-desc");
+            }
+        });
+    }
+
+    window.onload = loadReports;
+</script>
+
+</body>
+</html>
