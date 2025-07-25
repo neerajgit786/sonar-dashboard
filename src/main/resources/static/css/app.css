@@ -116,6 +116,11 @@
       font-size: 25px;
       font-weight: bold;
     }
+.note {
+      font-size: 12px;
+      color: red;
+      font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
 
 .btn {
       padding: 10px 16px;

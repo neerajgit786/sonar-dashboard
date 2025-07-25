@@ -3,6 +3,7 @@ package com.dashboard.app.controller;
 import com.dashboard.app.model.DisplayUpdateRequest;
 import com.dashboard.app.model.GameReport;
 import com.dashboard.app.model.Project;
+import com.dashboard.app.model.VendorRequest;
 import com.dashboard.app.service.impl.CsvService;
 import com.dashboard.app.service.impl.SonarService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,9 +48,9 @@ public class DashboardController {
 
     @PostMapping("/dashboard/display/save")
     @ResponseBody
-    public ResponseEntity<Void> configurationSave(@RequestBody DisplayUpdateRequest request)
+    public ResponseEntity<String> configurationSave(@RequestBody DisplayUpdateRequest request)
     {
-        return sonarService.configurationSave(request.getAddedProjects() , request.getRemovedProjects());
+        return sonarService.configurationSave(request.getAddedProjects() , request.getRemovedProjects(), request.getVendorNodesList());
 
 
     }
@@ -62,5 +63,7 @@ public class DashboardController {
         return new ResponseEntity<>(response, HttpStatus.OK);
 
     }
+
+
 
 }

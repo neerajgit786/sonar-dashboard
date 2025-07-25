@@ -8,4 +8,5 @@ import java.util.List;
 public class DisplayUpdateRequest {
     List<String> addedProjects;
     List<String> removedProjects;
+    List<VendorNode> vendorNodesList;
 }

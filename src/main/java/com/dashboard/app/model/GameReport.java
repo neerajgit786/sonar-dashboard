@@ -18,11 +18,12 @@ public class GameReport {
     private String vulnerabilities;
     private String techDebtRatio;
     private Boolean display;
+    private String vendor;
 
     public GameReport(String gameName, String key, String sonarReportUrl, String date,
                       String qualityGate, String grade, String ragStatus,
                       String codeCoverage, String bugs, String codeSmell, String security,
-                      String vulnerabilities, String techDebtRatio, Boolean display) {
+                      String vulnerabilities, String techDebtRatio, Boolean display, String vendor) {
         this.gameName = gameName;
         this.key = key;
         this.sonarReportUrl = sonarReportUrl;
@@ -37,6 +38,7 @@ public class GameReport {
         this.vulnerabilities = vulnerabilities;
         this.techDebtRatio = techDebtRatio;
         this.display = display;
+        this.vendor = vendor;
     }
 
 }

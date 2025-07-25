@@ -30,4 +30,6 @@ public class Master {
     private String ragStatus;
     @Column(name = "display")
     private Boolean display = false;
+    @Column(name = "vendor")
+    private String vendor;
 }

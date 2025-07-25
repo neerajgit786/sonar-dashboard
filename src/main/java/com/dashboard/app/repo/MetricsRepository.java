@@ -30,7 +30,8 @@ public interface MetricsRepository extends JpaRepository<Metrics, Long> {
             CAST(mt.security_hotspots AS VARCHAR) AS security,
             CAST(mt.vulnerabilities AS VARCHAR) AS vulnerabilities,
             CAST(mt.sqale_debt_ratio AS VARCHAR) AS techDebtRatio,
-            m.display As display
+            m.display As display,
+            m.vendor As vendor
         FROM sonar.master m
         LEFT JOIN sonar.metrics mt ON m.id = mt.master_id
         """,
