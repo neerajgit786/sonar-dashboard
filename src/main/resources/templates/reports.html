@@ -62,10 +62,10 @@
     <thead>
     <tr>
         <th id="checkbox-header" style="display: none;"></th>
-        <th onclick="sortTable(1)">Seq No.</th>
+        <th>Seq No.</th>
         <th onclick="sortTable(2)">Project Name</th>
         <th onclick="sortTable(3)">Project Key</th>
-        <th>Vendor</th>
+        <th onclick="sortTable(4)">Vendor</th>
         <th onclick="sortTable(5)">Run Date</th>
         <th onclick="sortTable(6)">Quality Gate</th>
         <th onclick="sortTable(7)">Coverage%</th>
@@ -89,7 +89,7 @@
     let currentSortColumn = null;
 
     const columnKeys = [
-        null, 'seq', 'gameName', 'key', 'date', 'qualityGate', 'codeCoverage',
+        null, 'seq', 'gameName', 'key', 'vendor','date', 'qualityGate', 'codeCoverage',
         'bugs', 'codeSmell', 'security', 'vulnerabilities', 'grade', 'ragStatus'
     ];
 
@@ -203,6 +203,7 @@
                 configMode = false;
                 document.querySelector(".save-btn").style.display = "none";
                 document.getElementById("checkbox-header").style.display = "none";
+                document.querySelector(".note").style.display = "none";
                 await loadReports();
             } else {
                 alert("Failed to save display settings.");
@@ -268,32 +269,71 @@
         const ascending = !(sortDirection[colIndex] || false);
         sortDirection = {};
         sortDirection[colIndex] = ascending;
-        currentSortColumn = colIndex;
-
+<!--        currentSortColumn = colIndex;-->
+<!--console.log("Sorting by column:", key);-->
+<!--console.table(currentReports);-->
+<!--console.log("Sorting", key, "ascending?", ascending);-->
         applySort(colIndex, ascending);
         renderTable();
         highlightSortedColumn(colIndex, ascending);
     }
 
-    function applySort(colIndex, ascending) {
-        const key = columnKeys[colIndex];
-        currentReports.sort((a, b) => {
-            let valA = a[key];
-            let valB = b[key];
+function applySort(colIndex, ascending) {
+    const key = columnKeys[colIndex];
 
-            if (!isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB))) {
-                valA = parseFloat(valA);
-                valB = parseFloat(valB);
-            } else if (typeof valA === 'string' && typeof valB === 'string') {
-                valA = valA.toLowerCase();
-                valB = valB.toLowerCase();
-            }
+    currentReports.sort((a, b) => {
+        let valA = a[key];
+        let valB = b[key];
 
-            if (valA < valB) return ascending ? -1 : 1;
-            if (valA > valB) return ascending ? 1 : -1;
-            return 0;
-        });
-    }
+        // Handle nullish/empty values
+        const isEmpty = (v) => v === null || v === undefined || v === '';
+
+        if (isEmpty(valA) && isEmpty(valB)) return 0;
+        if (isEmpty(valA)) return 1;
+        if (isEmpty(valB)) return -1;
+
+        // Normalize values
+        const isDateA = !isNaN(Date.parse(valA));
+        const isDateB = !isNaN(Date.parse(valB));
+        const isNumA = !isNaN(parseFloat(valA)) && isFinite(valA);
+        const isNumB = !isNaN(parseFloat(valB)) && isFinite(valB);
+
+        if (isNumA && isNumB) {
+            valA = parseFloat(valA);
+            valB = parseFloat(valB);
+        } else if (isDateA && isDateB) {
+            valA = new Date(valA);
+            valB = new Date(valB);
+        } else {
+            valA = String(valA).toLowerCase();
+            valB = String(valB).toLowerCase();
+        }
+
+        if (valA < valB) return ascending ? -1 : 1;
+        if (valA > valB) return ascending ? 1 : -1;
+        return 0;
+    });
+}
+
+<!--    function applySort(colIndex, ascending) {-->
+<!--        const key = columnKeys[colIndex];-->
+<!--        currentReports.sort((a, b) => {-->
+<!--            let valA = a[key];-->
+<!--            let valB = b[key];-->
+
+<!--            if (!isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB))) {-->
+<!--                valA = parseFloat(valA);-->
+<!--                valB = parseFloat(valB);-->
+<!--            } else if (typeof valA === 'string' && typeof valB === 'string') {-->
+<!--                valA = valA.toLowerCase();-->
+<!--                valB = valB.toLowerCase();-->
+<!--            }-->
+
+<!--            if (valA < valB) return ascending ? -1 : 1;-->
+<!--            if (valA > valB) return ascending ? 1 : -1;-->
+<!--            return 0;-->
+<!--        });-->
+<!--    }-->
 
     function highlightSortedColumn(colIndex, ascending) {
         const ths = document.querySelectorAll("th");
