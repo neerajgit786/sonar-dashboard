@@ -1,32 +1,35 @@
 package com.dashboard.app.service.impl;
 
-import ch.qos.logback.core.encoder.EchoEncoder;
 import com.dashboard.app.config.SonarQubeConfig;
 import com.dashboard.app.entity.History;
 import com.dashboard.app.entity.Master;
 import com.dashboard.app.entity.Metrics;
 import com.dashboard.app.model.Project;
 import com.dashboard.app.model.Result;
+import com.dashboard.app.model.VendorNode;
+import com.dashboard.app.model.VendorRequest;
 import com.dashboard.app.repo.HistoryRepository;
 import com.dashboard.app.repo.MasterRepository;
 import com.dashboard.app.repo.MetricsRepository;
 import com.dashboard.app.util.GradeCalculator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.sun.source.tree.TryTree;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.observation.ObservationProperties;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-
+import java.util.stream.Collectors;
 
 @Service
 public class SonarService {
@@ -58,17 +61,23 @@ public class SonarService {
             for (JsonNode project : components) {
                 String key = project.get("key").asText();
                 String name = project.get("name").asText();
-
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
+                Master master = null;
                 if (!masterRepo.existsByKey(key)) {
-                    Master master = new Master();
+                    master = new Master();
                     master.setKey(key);
                     master.setName(name);
-                    master.setDate( LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
-                    master.setGateStatus("NOT_CHECKED"); // Default value; will be updated by fetchAndSaveMetrics()
-                    master.setReport_url(sonarQubeConfig.getSonarServerUrl()+"/dashboard?id=" + key);
 
-                    masterRepo.save(master);
+                    master.setDate(ObjectUtils.isEmpty(project.get("lastAnalysisDate")) ? LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS) :
+                            LocalDateTime.parse(project.get("lastAnalysisDate").asText(), formatter));
+                    master.setGateStatus("NOT_CHECKED"); // Default value; will be updated by fetchAndSaveMetrics()
+                    master.setReport_url(sonarQubeConfig.getSonarServerUrl() + "/dashboard?id=" + key);
+                } else {
+                    master = masterRepo.findByProjectKey(key);
+                    master.setDate(ObjectUtils.isEmpty(project.get("lastAnalysisDate")) ? LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS) :
+                            LocalDateTime.parse(project.get("lastAnalysisDate").asText(), formatter));
                 }
+                masterRepo.save(master);
                 projectKeyList.add(key);
             }
         }
@@ -95,9 +104,9 @@ public class SonarService {
             String gateStatus = gate
                     .get("status").asText().equals("OK") ? "PASSED" : "FAILED";
 
-            master.setDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+//            master.setDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
             master.setGateStatus(gateStatus);
-            master.setReport_url("http://localhost:9000/dashboard?id=" + master.getName());
+            master.setReport_url(sonarQubeConfig.getSonarServerUrl() + "/dashboard?id=" + master.getKey());
 
             String metricsUrl = sonarQubeConfig.getSonarServerUrl() + "/api/measures/component?component=" + master.getKey() +
                     "&metricKeys=coverage,bugs,code_smells,vulnerabilities,security_hotspots,sqale_debt_ratio&additionalFields=period";
@@ -105,7 +114,10 @@ public class SonarService {
             ResponseEntity<JsonNode> metricsResponse = restTemplate.exchange(metricsUrl, HttpMethod.GET, entity, JsonNode.class);
             JsonNode measures = metricsResponse.getBody().get("component").get("measures");
 
-            Metrics metrics = new Metrics();
+            Metrics metrics = null;
+            Optional<Metrics> metricsOptional = metricsRepo.findMetricsByMasterId(master.getId());
+            metrics = ObjectUtils.isEmpty(metricsOptional) ? new Metrics() : metricsOptional.get();
+
             metrics.setMaster(master);
             metrics.setType("overall");
             metrics.setUpdatedDate(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
@@ -140,7 +152,7 @@ public class SonarService {
             metricsList.add(metrics);
             //calculate grade for each project based on metrics
             //String grade = calculateGrade(metrics.getVulnerabilities(), metrics.getMaintainability(), metrics.getBugs());
-           // Result result = GradeCalculator.calculateGradeAndRag(metrics.getCoverage(), metrics.getBugs(), metrics.getSecurityHotspots(), metrics.getVulnerabilities(), metrics.getMaintainability());
+            // Result result = GradeCalculator.calculateGradeAndRag(metrics.getCoverage(), metrics.getBugs(), metrics.getSecurityHotspots(), metrics.getVulnerabilities(), metrics.getMaintainability());
             Result result = GradeCalculator.calculateGradeAndRag(
                     metrics.getCoverage() != null ? metrics.getCoverage() : 0.0,
                     metrics.getBugs() != null ? metrics.getBugs() : 0,
@@ -157,36 +169,50 @@ public class SonarService {
     }
 
 
-    public ResponseEntity<String> exportToCSV(String outputPath) throws IOException {
+    public ResponseEntity<Resource> exportToCSV() {
         List<Metrics> data = metricsRepo.findAll();
 
-        try (PrintWriter writer = new PrintWriter(new File(outputPath))) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            PrintWriter writer = new PrintWriter(out);
             writer.println("Game Name,Sonar Report URL,Date,Quality Gate,Grade,RAG Status,Code Coverage %,Bugs,Code Smell,Security,Vulnerabilities,Tech Debt Ratio,Game Key");
+
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
             for (Metrics m : data) {
                 Master master = m.getMaster();
                 writer.printf("%s,%s,%s,%s,%s,%s,%s,%d,%d,%d,%d,%s,%s%n",
-                        master.getName(),
-                        master.getReport_url(),
-                        master.getDate().format(formatter),
+                        escapeCsv(master.getName()),
+                        escapeCsv(master.getReport_url()),
+                        master.getDate() != null ? master.getDate().format(formatter) : "",
                         master.getGateStatus(),
                         master.getGrade(),
                         master.getRagStatus(),
-                        m.getCoverage(),
+                        String.valueOf(m.getCoverage()),
                         m.getBugs(),
                         m.getCodeSmells(),
                         m.getSecurityHotspots(),
                         m.getVulnerabilities(),
-                        m.getMaintainability(),
+                        String.valueOf(m.getMaintainability()),
                         master.getKey()
                 );
             }
-        } catch (Exception e) {
-            return new ResponseEntity<>("Error in export :" + e.getMessage().toString(), HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>("successful export :", HttpStatus.OK);
 
+            writer.flush();
+            ByteArrayResource resource = new ByteArrayResource(out.toByteArray());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sonar-export.csv")
+                    .contentType(MediaType.parseMediaType("text/csv"))
+                    .contentLength(resource.contentLength())
+                    .body(resource);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
+
 
     public ResponseEntity<String> fetchHistoricalMetrics() {
         try {
@@ -252,6 +278,48 @@ public class SonarService {
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         return headers;
     }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "";
+        String escaped = value.replace("\"", "\"\""); // escape double quotes
+        if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n")) {
+            return "\"" + escaped + "\""; // wrap in quotes if needed
+        }
+        return escaped;
+    }
+
+    public ResponseEntity<String> configurationSave(List<String> addedProjects, List<String> removedProjects, List<VendorNode> vendorNodeList) {
+        try {
+            String[] projectKeysToBeAdded = addedProjects.toArray(new String[0]);
+            String[] projectKeysToBeRemoved = removedProjects.toArray(new String[0]);
+            // List<Master> masterList = new ArrayList<Master>();
+            List<Master> projectList = masterRepo.findAll();
+            Map<String, Master> keyProjectMap = projectList.stream().collect(Collectors.toMap(e -> e.getKey(), e -> e));
+
+            for (String project : projectKeysToBeAdded) {
+                keyProjectMap.get(project).setDisplay(Boolean.TRUE);
+                //  masterList.add(keyProjectMap.get(project));
+            }
+            for (String project : projectKeysToBeRemoved) {
+                keyProjectMap.get(project).setDisplay(Boolean.FALSE);
+                //  masterList.add(keyProjectMap.get(project));
+            }
+            for (VendorNode node : vendorNodeList) {
+                keyProjectMap.get(node.getKey()).setVendor(node.getVendorName());
+            }
+            masterRepo.saveAll(keyProjectMap.values());
+            return new ResponseEntity<String>("Successfull", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<String>("ISE", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public List<String> getDisplayList() {
+        List<Master> projectList = masterRepo.findByDisplay();
+        List<String> projectKeys = projectList.stream().map(e -> e.getKey()).collect(Collectors.toList());
+        return projectKeys;
+    }
+
 
 }
 
