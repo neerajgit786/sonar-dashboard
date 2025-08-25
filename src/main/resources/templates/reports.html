@@ -56,6 +56,7 @@
 </div>
 <div class="header">
     <div class="note" style="display:none;">Select/DeSelect Checkboxes to ADD/REMOVE projects on dashboard</div>
+    <h3><div>Filter:&nbsp;<input type="text" id="searchInput" placeholder="enter text to search"/></div></h3> 
 </div>
 
 <table class="styled-table" id="myTable">
@@ -344,6 +345,18 @@ function applySort(colIndex, ascending) {
             }
         });
     }
+    
+  
+    document.getElementById("searchInput").addEventListener("keyup", function () {
+      let filter = this.value.toLowerCase();
+      let rows = document.querySelectorAll("#myTable tbody tr");
+
+      rows.forEach(row => {
+        let text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+      });
+    });
+  
 
     window.onload = loadReports;
 </script>
