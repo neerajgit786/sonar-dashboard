@@ -47,16 +47,18 @@
 
 <div class="header">
     <img src="/images/ig-logo.png" alt="Company Logo" class="logo" />
-    <div class="label">Sonar Dashboard</div>
+    <div class="label">Custom Sonar Dashboard</div>
+    <h3>Filter:&nbsp;<input type="text" id="searchInput" placeholder="enter text to search"/></h3>
     <button class="btn refresh-btn" onclick="refreshReports()"><i class="fas fa-sync-alt"></i> Refresh</button>
     <button class="btn download-btn" onclick="downloadCSV()"><i class="fas fa-download"></i> Download</button>
     <button class="btn config-btn" onclick="toggleConfigMode()"><i class="fas fa-cog"></i> Config</button>
     <button class="btn save-btn" onclick="saveSelected()" style="display:none;"><i class="fas fa-save"></i> Save</button>
-
+    <button class="btn graph-btn" onclick="redirectToGraphs()"><i class="fas fa-chart-line"></i> Graph</button>
+    
 </div>
 <div class="header">
     <div class="note" style="display:none;">Select/DeSelect Checkboxes to ADD/REMOVE projects on dashboard</div>
-    <h3><div>Filter:&nbsp;<input type="text" id="searchInput" placeholder="enter text to search"/></div></h3> 
+     
 </div>
 
 <table class="styled-table" id="myTable">
@@ -105,7 +107,9 @@
 
         renderTable();
     }
-
+	function redirectToGraphs() {
+    window.location.href = "./graph"; 
+    }
     function renderTable() {
         const tableBody = document.getElementById('report-body');
         tableBody.innerHTML = '';

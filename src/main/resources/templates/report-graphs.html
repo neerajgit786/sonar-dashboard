@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bar Chart from Table</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+		<!-- Canvas for chart -->
+	<!-- Smaller Canvas -->
+	<table id="coverage" class="styled-table">
+	<tr><td>Game wise Coverage</td>
+		<td><canvas id="barChart" width="400" height="200"></canvas></td>
+	</tr>
+	</table>
+	<script>
+	
+	let displayableProject = new Set();
+
+fetch('/dashboard/display-list')
+  .then(resp => resp.json())
+  .then(projects => {
+    displayableProject = new Set(projects); // assume projects = ["Game1","Game2",...]
+
+    return fetch('/dashboard/reports/data');
+  })
+  .then(response => response.json())
+  .then(data => {
+    const filtered = data.filter(project => displayableProject.has(project.gameName));
+    const sortedReports = filtered.sort((a, b) => b.codeCoverage - a.codeCoverage);
+    const top10 = sortedReports.slice(0, 10);
+
+    const labels = top10.map(item => item.gameName);
+    const values = top10.map(item => item.codeCoverage);
+
+    new Chart(document.getElementById("barChart"), {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+        label: "Code Coverage",
+        data: values,
+        fill: false,
+        backgroundColor: "green",
+        tension: 0.3}]
+      },
+      options: {
+        responsive: false,
+        scales: {
+          y: { beginAtZero: true }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+	
+</script>
+
+</body>
+</html>

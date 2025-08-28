@@ -31,6 +31,10 @@ public class DashboardController {
         return "reports";
     }
 
+    @GetMapping("/dashboard/graph")
+    public String getgrapthPage() {
+        return "report-graphs";
+    }
     @ResponseBody
     @GetMapping("/dashboard/reports/data")
     public List<GameReport> getReportData() {
