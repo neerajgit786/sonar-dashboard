@@ -1,14 +1,13 @@
 package com.dashboard.app.repo;
 
-import com.dashboard.app.entity.Master;
-import com.dashboard.app.entity.Metrics;
-import com.dashboard.app.model.GameReport;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-import java.util.Optional;
+import com.dashboard.app.entity.Metrics;
 
 public interface MetricsRepository extends JpaRepository<Metrics, Long> {
 
