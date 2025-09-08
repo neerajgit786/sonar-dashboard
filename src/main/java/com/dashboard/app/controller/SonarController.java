@@ -1,7 +1,9 @@
 package com.dashboard.app.controller;
 
 
-import com.dashboard.app.service.impl.SonarService;
+import java.io.IOException;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
@@ -9,8 +11,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-import java.util.List;
+import com.dashboard.app.service.impl.SonarService;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 public class SonarController {
@@ -19,9 +22,9 @@ public class SonarController {
     private SonarService sonarService;
 
 
-    @RequestMapping("/")
-    String hello() {
-        return "Welcome to sonar dashboard custom export Application!";
+    @GetMapping("/")
+    public void redirectToLogin(HttpServletResponse response) throws IOException {
+        response.sendRedirect("/login");
     }
 
     @RequestMapping("/sonar/projects")

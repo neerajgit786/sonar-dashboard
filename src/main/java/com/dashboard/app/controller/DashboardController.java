@@ -9,6 +9,7 @@ import com.dashboard.app.service.impl.SonarService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,14 +28,20 @@ public class DashboardController {
     private SonarService sonarService;
 
     @GetMapping("/dashboard/reports")
-    public String getReportsPage() {
-        return "reports";
+    public String getReportsPage(Authentication authentication, Model model) {
+        String username = authentication.getName(); // logged in user
+        model.addAttribute("username", username);
+    	return "reports";
     }
+    
 
     @GetMapping("/dashboard/graph")
-    public String getgrapthPage() {
-        return "report-graphs";
+    public String getgraphPage(Authentication authentication, Model model) {
+        String username = authentication.getName(); // logged in user
+        model.addAttribute("username", username);
+        return "report-graphs"; // home.html
     }
+    
     @ResponseBody
     @GetMapping("/dashboard/reports/data")
     public List<GameReport> getReportData() {
@@ -55,8 +62,6 @@ public class DashboardController {
     public ResponseEntity<String> configurationSave(@RequestBody DisplayUpdateRequest request)
     {
         return sonarService.configurationSave(request.getAddedProjects() , request.getRemovedProjects(), request.getVendorNodesList());
-
-
     }
 
     @GetMapping("/dashboard/display-list")
