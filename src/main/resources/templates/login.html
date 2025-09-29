@@ -84,7 +84,7 @@
     <div th:if="${param.error}" class="error-msg">Invalid username or password</div>
     <div th:if="${param.logout}" class="success-msg">You have been logged out</div>
     <div th:if="${param.signupSuccess}" class="success-msg">Account created successfully. Please login.</div>
-
+	<div th:if="${param.resetSuccess}" class="success-msg">password reset link sent successfully. Please check.</div>	
     <!-- Signup & Forgot Password Links -->
     <div class="extra-links">
       <a th:href="@{/signup}"><i class="fas fa-user-plus"></i> Sign Up</a>

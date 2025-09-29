@@ -8,20 +8,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class LoginController {
 
-    @GetMapping("/login")
-    public String loginPage() {
-        return "login"; // resolves to login.html (Thymeleaf or JSP)
-    }
-    
-    @GetMapping("/forgot-password")
-    public String forgotPwdPage() {
-        return "forgot-password"; // resolves to signup.html (Thymeleaf or JSP)
-    }
-    @GetMapping("/dashboard")
-    public String homePage(Authentication authentication, Model model) {
-        String username = authentication.getName(); // logged in user
-        model.addAttribute("username", username);
-        return "reports"; // home.html
-    }
-    
+	@GetMapping("/login")
+	public String loginPage() {
+		return "login";
+	}
+
+	@GetMapping("/dashboard")
+	public String homePage(Authentication authentication, Model model) {
+		String username = authentication.getName();
+		model.addAttribute("username", username);
+		return "reports";
+	}
+
 }

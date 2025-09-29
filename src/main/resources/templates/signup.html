@@ -63,15 +63,19 @@
   <div class="signup-card">
     <h2><i class="fas fa-user-plus"></i> Sign Up</h2>
 
-    <form th:action="@{/doSignup}" method="post">
+    <form th:action="@{/doSignup}" th:object="${user}" method="post">
       <div class="mb-3 input-group">
         <span class="input-group-text"><i class="fas fa-user"></i></span>
         <input type="text" class="form-control" name="username" placeholder="Username" required>
+        <div th:if="${#fields.hasErrors('username')}" class="error-msg"
+         th:errors="*{username}">Invalid Username</div>
       </div>
 
       <div class="mb-3 input-group">
         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
         <input type="email" class="form-control" name="email" placeholder="Email" required>
+        <div th:if="${#fields.hasErrors('email')}" class="error-msg"
+         th:errors="*{email}">Invalid Email</div>
       </div>
 
       <div class="mb-3 input-group">

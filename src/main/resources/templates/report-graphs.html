@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Bar Chart from Table</title>
 <link th:href="@{/css/app.css}" rel="stylesheet" />
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -14,10 +15,13 @@
             cursor: pointer;
         }
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
+margin-left: 1px;
+background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+	display: flex;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
         .logo {
             height: 40px;
             width: 40px;
@@ -43,7 +47,7 @@
         .styled-table th.sort-desc::after {
             content: " ▼";
         }
-        #top-bar {
+#top-bar {
       
       top: 10px;
       right: 20px;
@@ -65,15 +69,20 @@
       color: #007bff;
       font-weight: bold;
     }
+   
     </style>
 </head>
 <body>
+
 <div class="header">
 		<img src="/images/ig-logo.png" alt="Company Logo" class="logo" />
 		<div class="label">Custom Sonar Dashboard</div>
 		<div id="top-bar">
     👤<span id="username">hi <span th:text="${username}"></span>!</span>
-    <button class="btn refresh-btn" onclick="redirectToDashboard()"><i class="fas fa-long-arrow-alt-left"></i> Go Back</button>
+    
+  </div>
+  <button class="btn refresh-btn" onclick="redirectToDashboard()">
+    <i class="fas fa-long-arrow-alt-left"></i> Go Back</button>
   </div>
   </div>
 

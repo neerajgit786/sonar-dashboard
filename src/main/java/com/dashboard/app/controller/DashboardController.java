@@ -1,11 +1,7 @@
 package com.dashboard.app.controller;
 
-import com.dashboard.app.model.DisplayUpdateRequest;
-import com.dashboard.app.model.GameReport;
-import com.dashboard.app.model.Project;
-import com.dashboard.app.model.VendorRequest;
-import com.dashboard.app.service.impl.CsvService;
-import com.dashboard.app.service.impl.SonarService;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,62 +13,61 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.List;
+import com.dashboard.app.model.DisplayUpdateRequest;
+import com.dashboard.app.model.GameReport;
+import com.dashboard.app.service.impl.CsvService;
+import com.dashboard.app.service.impl.SonarService;
 
 @Controller
 public class DashboardController {
-    @Autowired
-    private CsvService csvService;
+	@Autowired
+	private CsvService csvService;
 
-    @Autowired
-    private SonarService sonarService;
+	@Autowired
+	private SonarService sonarService;
 
-    @GetMapping("/dashboard/reports")
-    public String getReportsPage(Authentication authentication, Model model) {
-        String username = authentication.getName(); // logged in user
-        model.addAttribute("username", username);
-    	return "reports";
-    }
-    
+	@GetMapping("/dashboard/reports")
+	public String getReportsPage(Authentication authentication, Model model) {
+		String username = authentication.getName();
+		model.addAttribute("username", username);
+		return "reports";
+	}
 
-    @GetMapping("/dashboard/graph")
-    public String getgraphPage(Authentication authentication, Model model) {
-        String username = authentication.getName(); // logged in user
-        model.addAttribute("username", username);
-        return "report-graphs"; // home.html
-    }
-    
-    @ResponseBody
-    @GetMapping("/dashboard/reports/data")
-    public List<GameReport> getReportData() {
-        return csvService.loadReports();
+	@GetMapping("/dashboard/graph")
+	public String getgraphPage(Authentication authentication, Model model) {
+		String username = authentication.getName();
+		model.addAttribute("username", username);
+		return "report-graphs";
+	}
 
-    }
+	@ResponseBody
+	@GetMapping("/dashboard/reports/data")
+	public List<GameReport> getReportData() {
+		return csvService.loadReports();
 
-    @PostMapping("/dashboard/refresh")
-    @ResponseBody
-    public ResponseEntity<String> refreshAction() {
-        sonarService.fetchAndSaveProjects();
-        sonarService.fetchAndSaveMetrics();
-        return ResponseEntity.ok("Refreshed");
-    }
+	}
 
-    @PostMapping("/dashboard/display/save")
-    @ResponseBody
-    public ResponseEntity<String> configurationSave(@RequestBody DisplayUpdateRequest request)
-    {
-        return sonarService.configurationSave(request.getAddedProjects() , request.getRemovedProjects(), request.getVendorNodesList());
-    }
+	@PostMapping("/dashboard/refresh")
+	@ResponseBody
+	public ResponseEntity<String> refreshAction() {
+		sonarService.fetchAndSaveProjects();
+		sonarService.fetchAndSaveMetrics();
+		return ResponseEntity.ok("Refreshed");
+	}
 
-    @GetMapping("/dashboard/display-list")
-    @ResponseBody
-    public ResponseEntity<List<String>> getDisplayList()
-    {
-        List<String> response =  sonarService.getDisplayList();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+	@PostMapping("/dashboard/display/save")
+	@ResponseBody
+	public ResponseEntity<String> configurationSave(@RequestBody DisplayUpdateRequest request) {
+		return sonarService.configurationSave(request.getAddedProjects(), request.getRemovedProjects(),
+				request.getVendorNodesList());
+	}
 
-    }
+	@GetMapping("/dashboard/display-list")
+	@ResponseBody
+	public ResponseEntity<List<String>> getDisplayList() {
+		List<String> response = sonarService.getDisplayList();
+		return new ResponseEntity<>(response, HttpStatus.OK);
 
-
+	}
 
 }

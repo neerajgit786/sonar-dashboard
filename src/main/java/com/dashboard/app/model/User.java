@@ -1,18 +1,5 @@
-package com.dashboard.app.entity;
+package com.dashboard.app.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
-@Entity
-@Table(name = "user")
-@Data
-@Getter
-@Setter
 public class User {
 	public Long getId() {
 		return id;
@@ -50,8 +37,6 @@ public class User {
 	public void setConfirmPassword(String confirmPassword) {
 		this.confirmPassword = confirmPassword;
 	}
-	@Id
-	@GeneratedValue
 	private Long id;
 
 	private String username;

@@ -175,7 +175,7 @@ public class SonarService {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             PrintWriter writer = new PrintWriter(out);
-            writer.println("Game Name,Sonar Report URL,Date,Quality Gate,Grade,RAG Status,Code Coverage %,Bugs,Code Smell,Security,Vulnerabilities,Tech Debt Ratio,Game Key");
+            writer.println("Game Name,VendorName,Date,Quality Gate,Grade,RAG Status,Code Coverage %,Bugs,Code Smell,Security,Vulnerabilities,Tech Debt Ratio,Game Key");
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -183,7 +183,7 @@ public class SonarService {
                 Master master = m.getMaster();
                 writer.printf("%s,%s,%s,%s,%s,%s,%s,%d,%d,%d,%d,%s,%s%n",
                         escapeCsv(master.getName()),
-                        escapeCsv(master.getReport_url()),
+                        escapeCsv(master.getVendor()),
                         master.getDate() != null ? master.getDate().format(formatter) : "",
                         master.getGateStatus(),
                         master.getGrade(),
